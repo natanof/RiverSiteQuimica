@@ -34,8 +34,38 @@
     <button class="nav-btn" data-target="alcenos">Alcenos</button>
     <button class="nav-btn" data-target="alcinos">Alcinos</button>
     <button class="nav-btn" data-target="oxigenados">Oxigenados</button>
-    <button class="nav-btn" data-target="quizgeral">Quiz</button>
-    <button class="nav-btn" onclick="window.location.href='professor.html'" style="background:linear-gradient(135deg, #8b5cf6, #6366f1); color:white; border-color:transparent">Professor</button>
+    <button class="nav-btn" data-target="ferramentas" style="display:inline-flex; align-items:center; gap:8px">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="flex-shrink:0">
+        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m10.5 7.5l2 3l-2 3h-3l-2-3l2-3z" stroke-width="1"/>
+          <path d="m15.5 4.5l2 3l-2 3h-3l-2-3l2-3zm0 12l2 3m-12-15l2 3m5 9l-1 1.5m-4-4.5l-1 1.5m-1-4.5h-1m13 3h3m-5-3l2 3l-2 3h-3l-2-3l2-3z" stroke-width="1"/>
+          <circle cx="10.5" cy="19.5" r=".5" fill="currentColor"/>
+          <circle cx="5.5" cy="16.5" r=".5" fill="currentColor"/>
+          <circle cx="2.5" cy="10.5" r=".5" fill="currentColor"/>
+        </g>
+      </svg>
+      <span>Ferramentas</span>
+    </button>
+    <button class="nav-btn" data-target="quizgeral" style="display:inline-flex; align-items:center; gap:8px">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="flex-shrink:0">
+        <g fill="none" stroke="currentColor" stroke-width="1">
+          <path stroke-linecap="round" stroke-width="1.5" d="M8.5 7.5c0-1.013.895-2 2-2s2 .82 2 1.833c0 .365-.116.705-.317.991C11.585 9.176 10.5 9.987 10.5 11"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.5 13.5h.009"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 19.5c1.05.87 2.315 1.424 3.764 1.519c1.141.075 2.333.075 3.473 0a4 4 0 0 0 1.188-.268c.41-.167.614-.25.719-.237c.104.012.255.122.557.342c.533.388 1.204.666 2.2.643c.503-.012.755-.019.867-.208c.113-.19-.027-.452-.308-.977c-.39-.728-.636-1.561-.262-2.229c.643-.954 1.19-2.083 1.27-3.303c.043-.655.043-1.334 0-1.99A6.7 6.7 0 0 0 20.9 10.5"/>
+          <path stroke-linejoin="round" stroke-width="1.5" d="M12.237 17.019a6.685 6.685 0 0 0 6.23-6.237c.044-.655.044-1.334 0-1.99a6.685 6.685 0 0 0-6.23-6.236a27 27 0 0 0-3.473 0a6.686 6.686 0 0 0-6.232 6.237a15 15 0 0 0 0 1.99c.08 1.22.627 2.349 1.27 3.302c.374.668.127 1.501-.262 2.23c-.28.524-.42.786-.308.976c.113.19.364.195.868.208c.995.024 1.666-.255 2.199-.643c.302-.22.453-.33.557-.342s.31.07.72.237c.368.15.795.242 1.188.268c1.139.075 2.33.075 3.473 0Z"/>
+        </g>
+      </svg>
+      <span>Quiz</span>
+    </button>
+    <button class="nav-btn" onclick="window.location.href='professor.html'" style="background:linear-gradient(135deg, #8b5cf6, #6366f1); color:white; border-color:transparent; display:inline-flex; align-items:center; gap:8px">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 256 256" style="flex-shrink:0">
+        <g fill="currentColor">
+          <path d="M192 80v96h-88a32 32 0 1 0-32-32h-8V80Z" opacity="0.2"/>
+          <path d="M216 40H40a16 16 0 0 0-16 16v144a16 16 0 0 0 16 16h13.39a8 8 0 0 0 7.23-4.57a48 48 0 0 1 86.76 0a8 8 0 0 0 7.23 4.57H216a16 16 0 0 0 16-16V56a16 16 0 0 0-16-16M80 144a24 24 0 1 1 24 24a24 24 0 0 1-24-24m136 56h-56.57a64.4 64.4 0 0 0-28.83-26.16a40 40 0 1 0-53.2 0A64.4 64.4 0 0 0 48.57 200H40V56h176ZM56 96V80a8 8 0 0 1 8-8h128a8 8 0 0 1 8 8v96a8 8 0 0 1-8 8h-16a8 8 0 0 1 0-16h8V88H72v8a8 8 0 0 1-16 0"/>
+        </g>
+      </svg>
+      <span>Professor</span>
+    </button>
   </nav>
   <main class="container">
     <section class="content">
@@ -675,6 +705,107 @@
                   </svg>
                 </div>
               </aside>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ferramentas de apoio (cálculos) -->
+      <article id="ferramentas" class="section">
+        <div style="margin-bottom:32px; text-align:center; max-width:700px; margin-left:auto; margin-right:auto">
+          <h2 style="font-size:2rem; margin-bottom:12px; color:#1e40af">Ferramentas de Apoio</h2>
+          <p style="font-size:1.05rem; color:#64748b; line-height:1.6">Calculadoras práticas para seus estudos de Química Orgânica</p>
+        </div>
+
+        <div style="max-width:900px; margin:0 auto">
+          <!-- Perfil do Aluno -->
+          <div class="card" style="margin-bottom:24px; border:1px solid var(--border); background:white">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
+              <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #2563eb, #3b82f6); display:flex; align-items:center; justify-content:center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              <h4 style="margin:0; font-size:1.1rem; color:#1e40af">Minha Conta</h4>
+            </div>
+            
+            <div id="aluno-status" style="font-size:0.9rem; color:#64748b; margin-bottom:16px">Não conectado</div>
+            
+            <button id="aluno-google-btn" class="btn primary" style="display:inline-flex; align-items:center; gap:8px; margin-bottom:16px">
+              <svg width="18" height="18" viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#4285f4" d="M533.5 278.4c0-17.4-1.6-34.1-4.7-50.3H272v95.2h147c-6.4 34.6-25.9 63.9-55.3 83.5v68.9h89.2c52.2-48.1 80.6-119 80.6-197.3z"/>
+                <path fill="#34a853" d="M272 544.3c72.9 0 134.1-24.1 178.8-65.6l-89.2-68.9c-24.8 16.7-56.6 26.6-89.6 26.6-68.9 0-127.3-46.5-148.3-109.1H31.2v68.6C75.6 486.4 167.5 544.3 272 544.3z"/>
+                <path fill="#fbbc05" d="M123.7 327.3c-7.4-22-11.6-45.5-11.6-69.3s4.2-47.3 11.6-69.3v-68.6H31.2C11.3 158.4 0 203.7 0 258s11.3 99.6 31.2 138.7l92.5-69.4z"/>
+                <path fill="#ea4335" d="M272 107.7c39.6 0 75.1 13.6 103.1 40.4l77.3-77.3C406 24.6 344.9 0 272 0 167.5 0 75.6 57.9 31.2 149.3l92.5 69.4C144.7 154.2 203.1 107.7 272 107.7z"/>
+              </svg>
+              <span id="aluno-google-btn-text">Entrar com Google</span>
+            </button>
+
+            <div id="aluno-perfil" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border)">
+              <div style="font-size:0.9rem; color:#0f172a; margin-bottom:16px">
+                <strong id="aluno-display-name"></strong><br>
+                <span id="aluno-display-email" style="color:#64748b; font-size:0.85rem"></span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px">
+                <div>
+                  <label style="font-weight:500; font-size:0.85rem; color:#64748b; display:block; margin-bottom:6px" for="aluno-nome-input">Nome</label>
+                  <input id="aluno-nome-input" type="text" placeholder="Seu nome" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit; font-size:0.9rem">
+                </div>
+                <div>
+                  <label style="font-weight:500; font-size:0.85rem; color:#64748b; display:block; margin-bottom:6px" for="aluno-turma-input">Turma</label>
+                  <input id="aluno-turma-input" type="text" placeholder="Ex.: 1ºA" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit; font-size:0.9rem">
+                </div>
+              </div>
+              <div style="display:flex; gap:8px">
+                <button id="aluno-salvar-perfil" class="btn ghost" style="flex:1; padding:8px 12px; font-size:0.9rem">Salvar</button>
+                <button id="aluno-logout-btn" class="btn ghost" style="flex:1; padding:8px 12px; font-size:0.9rem; border-color:rgba(239,68,68,0.3); color:#ef4444">Sair</button>
+              </div>
+              <div id="aluno-perfil-msg" style="font-size:0.85rem; color:#16a34a; display:none; margin-top:8px">✓ Perfil salvo</div>
+            </div>
+          </div>
+
+          <!-- Calculadora de Massa Molecular -->
+          <div class="card" style="margin-bottom:24px; border:1px solid var(--border); background:white">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
+              <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #10b981, #059669); display:flex; align-items:center; justify-content:center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+              </div>
+              <h4 style="margin:0; font-size:1.1rem; color:#1e40af">Massa Molecular</h4>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <input id="massa-formula-input" type="text" placeholder="Digite a fórmula (ex: H2O, C6H12O6)" style="padding:12px 14px; border-radius:10px; border:2px solid var(--border); font-size:1rem; font-family:inherit; width:100%">
+              <button id="massa-calcular-btn" class="btn primary" style="align-self:flex-start">Calcular</button>
+              <div id="massa-resultado" class="note" style="display:none"></div>
+            </div>
+          </div>
+
+          <!-- Calculadora de Fórmula Geral -->
+          <div class="card" style="border:1px solid var(--border); background:white">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
+              <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #8b5cf6, #7c3aed); display:flex; align-items:center; justify-content:center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+              </div>
+              <h4 style="margin:0; font-size:1.1rem; color:#1e40af">Fórmula Geral</h4>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <select id="formula-tipo-select" style="padding:12px 14px; border-radius:10px; border:2px solid var(--border); font-family:inherit; font-size:0.95rem; width:100%">
+                <option value="alcano">Alcano</option>
+                <option value="alceno">Alceno</option>
+                <option value="alcino">Alcino</option>
+              </select>
+              <input id="formula-n-input" type="number" min="1" step="1" value="1" placeholder="Número de carbonos (n)" style="padding:12px 14px; border-radius:10px; border:2px solid var(--border); font-family:inherit; font-size:1rem; width:100%">
+              <button id="formula-calcular-btn" class="btn primary" style="align-self:flex-start">Calcular</button>
+              <div id="formula-resultado" class="note" style="display:none"></div>
             </div>
           </div>
         </div>
@@ -2853,6 +2984,11 @@
         
         <!-- Container do Quiz -->
         <div id="quiz-geral-container" class="card" style="margin-top:12px; display:none"></div>
+
+        <!-- Painel do assistente de IA (contextual ao quiz) -->
+        <div id="ai-helper-info" class="note" style="margin-top:16px">
+          Quando tiver dúvida em alguma questão, clique em <strong>“Tenho dúvida / Perguntar à IA”</strong> no feedback do quiz para abrir o chat com a explicação contextualizada.
+        </div>
         
         <!-- Botão para voltar à seleção -->
         <div id="quiz-back-btn" style="margin-top:12px; display:none">
@@ -2880,7 +3016,53 @@
       </div>
     </aside>
   </main>
+
+  <!-- Widget de chat com IA -->
+  <div id="ai-chat-widget" style="position:fixed; right:24px; bottom:24px; width:320px; max-width:90vw; z-index:9999; display:none">
+    <div class="card" style="padding:16px 16px 12px 16px; box-shadow:0 12px 40px rgba(15,23,42,0.35); border-radius:18px">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px">
+        <div style="display:flex; align-items:center; gap:8px">
+          <div style="width:26px; height:26px; border-radius:999px; background:linear-gradient(135deg,#2563eb,#06b6d4); display:flex; align-items:center; justify-content:center; color:white;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" style="width:18px; height:18px; fill:white;">
+              <path d="M14.217,19.707l-1.112,2.547c-0.427,0.979-1.782,0.979-2.21,0l-1.112-2.547c-0.99-2.267-2.771-4.071-4.993-5.057	L1.73,13.292c-0.973-0.432-0.973-1.848,0-2.28l2.965-1.316C6.974,8.684,8.787,6.813,9.76,4.47l1.126-2.714	c0.418-1.007,1.81-1.007,2.228,0L14.24,4.47c0.973,2.344,2.786,4.215,5.065,5.226l2.965,1.316c0.973,0.432,0.973,1.848,0,2.28	l-3.061,1.359C16.988,15.637,15.206,17.441,14.217,19.707z"></path>
+              <path d="M24.481,27.796l-0.339,0.777c-0.248,0.569-1.036,0.569-1.284,0l-0.339-0.777c-0.604-1.385-1.693-2.488-3.051-3.092	l-1.044-0.464c-0.565-0.251-0.565-1.072,0-1.323l0.986-0.438c1.393-0.619,2.501-1.763,3.095-3.195l0.348-0.84	c0.243-0.585,1.052-0.585,1.294,0l0.348,0.84c0.594,1.432,1.702,2.576,3.095,3.195l0.986,0.438c0.565,0.251,0.565,1.072,0,1.323	l-1.044,0.464C26.174,25.308,25.085,26.411,24.481,27.796z"></path>
+            </svg>
+          </div>
+          <div style="display:flex; flex-direction:column">
+            <span style="font-weight:600; font-size:0.95rem; color:#0f172a">Assistente de Química</span>
+            <span style="font-size:0.8rem; color:#64748b">Tire dúvidas sobre o conteúdo e o quiz</span>
+          </div>
+        </div>
+        <button id="ai-chat-close" class="btn ghost" style="padding:4px 8px; min-width:auto; border-radius:999px; font-size:0.8rem">×</button>
+      </div>
+      <div id="ai-chat-messages" style="border-radius:12px; background:#f8fafc; border:1px solid rgba(148,163,184,0.4); padding:8px; max-height:260px; overflow-y:auto; font-size:0.85rem; margin-bottom:8px">
+        <div style="margin-bottom:6px; color:#64748b">Envie uma pergunta sobre a questão ou o conteúdo. A resposta da IA aparecerá aqui.</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px">
+        <textarea id="ai-chat-input" rows="2" placeholder="Digite sua dúvida..." style="resize:none; border-radius:10px; border:1px solid var(--border); padding:8px 10px; font-family:inherit; font-size:0.9rem"></textarea>
+        <button id="ai-chat-send" class="btn primary" style="width:100%; padding:10px 0; font-size:0.9rem">Enviar para a IA</button>
+        <div id="ai-chat-hint" style="font-size:0.75rem; color:#94a3b8">Obs.: é necessário configurar o backend de IA para respostas reais. Por enquanto, uma resposta simulada é exibida.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão flutuante para abrir o chat da IA -->
+  <button id="ai-chat-toggle" class="btn primary" style="position:fixed; right:24px; bottom:24px; z-index:9998; border-radius:999px; padding:10px 18px; display:flex; align-items:center; gap:8px; font-size:0.9rem">
+    <span style="display:flex; align-items:center; justify-content:center;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" style="width:18px; height:18px; fill:white;">
+        <path d="M14.217,19.707l-1.112,2.547c-0.427,0.979-1.782,0.979-2.21,0l-1.112-2.547c-0.99-2.267-2.771-4.071-4.993-5.057	L1.73,13.292c-0.973-0.432-0.973-1.848,0-2.28l2.965-1.316C6.974,8.684,8.787,6.813,9.76,4.47l1.126-2.714	c0.418-1.007,1.81-1.007,2.228,0L14.24,4.47c0.973,2.344,2.786,4.215,5.065,5.226l2.965,1.316c0.973,0.432,0.973,1.848,0,2.28	l-3.061,1.359C16.988,15.637,15.206,17.441,14.217,19.707z"></path>
+        <path d="M24.481,27.796l-0.339,0.777c-0.248,0.569-1.036,0.569-1.284,0l-0.339-0.777c-0.604-1.385-1.693-2.488-3.051-3.092	l-1.044-0.464c-0.565-0.251-0.565-1.072,0-1.323l0.986-0.438c1.393-0.619,2.501-1.763,3.095-3.195l0.348-0.84	c0.243-0.585,1.052-0.585,1.294,0l0.348,0.84c0.594,1.432,1.702,2.576,3.095,3.195l0.986,0.438c0.565,0.251,0.565,1.072,0,1.323	l-1.044,0.464C26.174,25.308,25.085,26.411,24.481,27.796z"></path>
+      </svg>
+    </span>
+    <span style="font-weight:600">Ajuda</span>
+  </button>
+
   <footer>&copy; 2025 Blog Química Orgânica — Feito por Natanael</footer>
+  <!-- Firebase SDK (v8 - compatível com uso simples via scripts) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
   <script src="script.js"></script>
   </body>
 </html>

@@ -1,70 +1,118 @@
-// Sistema de Login e Gerenciamento de Senha
+// Sistema de Login de Professor com usuário/senha (salvo no Firestore)
+let currentProfessorUser = null;
 const DEFAULT_USERNAME = 'admin';
 const DEFAULT_PASSWORD = 'admin';
 
-// Inicializa credenciais padrão se não existirem
-function initCredentials() {
-  if (!localStorage.getItem('professor_username')) {
-    localStorage.setItem('professor_username', DEFAULT_USERNAME);
-  }
-  if (!localStorage.getItem('professor_password')) {
-    localStorage.setItem('professor_password', DEFAULT_PASSWORD);
+// Inicializa credenciais padrão no Firestore se não existirem
+async function initProfessorCredentials() {
+  if (!window.firebaseDb) return;
+  
+  try {
+    const profRef = window.firebaseDb.collection('professores').doc(DEFAULT_USERNAME);
+    const doc = await profRef.get();
+    
+    if (!doc.exists) {
+      // Cria o admin padrão no Firestore
+      await profRef.set({
+        username: DEFAULT_USERNAME,
+        password: DEFAULT_PASSWORD,
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      console.log('Credenciais padrão do professor criadas no Firestore.');
+    }
+  } catch (err) {
+    console.error('Erro ao inicializar credenciais do professor:', err);
   }
 }
 
-// Verifica se está logado
-function checkLogin() {
-  const isLoggedIn = sessionStorage.getItem('professor_logged_in') === 'true';
-  if (isLoggedIn) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
+function updateProfessorLayout(loggedIn) {
+  const loginScreen = document.getElementById('login-screen');
+  const mainContent = document.getElementById('main-content');
+  if (loggedIn) {
+    if (loginScreen) loginScreen.style.display = 'none';
+    if (mainContent) mainContent.style.display = 'block';
     showProfessorPanel();
   } else {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('main-content').style.display = 'none';
+    if (loginScreen) loginScreen.style.display = 'flex';
+    if (mainContent) mainContent.style.display = 'none';
   }
 }
 
-// Função de login
-function handleLogin(event) {
+// Função de login com usuário/senha (validando no Firestore)
+async function handleLogin(event) {
   event.preventDefault();
+  const errorDiv = document.getElementById('login-error');
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value.trim();
-  const errorDiv = document.getElementById('login-error');
   
-  const storedUsername = localStorage.getItem('professor_username') || DEFAULT_USERNAME;
-  const storedPassword = localStorage.getItem('professor_password') || DEFAULT_PASSWORD;
+  if (!window.firebaseDb) {
+    if (errorDiv) {
+      const span = errorDiv.querySelector('span');
+      if (span) span.textContent = 'Firebase não configurado. Preencha firebase-config.js.';
+      errorDiv.style.display = 'flex';
+    } else {
+      alert('Firebase não configurado. Preencha firebase-config.js.');
+    }
+    return;
+  }
   
-  if (username === storedUsername && password === storedPassword) {
+  try {
+    const profRef = window.firebaseDb.collection('professores').doc(username);
+    const doc = await profRef.get();
+    
+    if (!doc.exists) {
+      if (errorDiv) {
+        const span = errorDiv.querySelector('span');
+        if (span) span.textContent = 'Usuário não encontrado!';
+        errorDiv.style.display = 'flex';
+      }
+      document.getElementById('login-password').value = '';
+      return;
+    }
+    
+    const data = doc.data();
+    if (data.password !== password) {
+      if (errorDiv) {
+        const span = errorDiv.querySelector('span');
+        if (span) span.textContent = 'Senha incorreta!';
+        errorDiv.style.display = 'flex';
+      }
+      document.getElementById('login-password').value = '';
+      return;
+    }
+    
+    // Login bem-sucedido
+    currentProfessorUser = { username, ...data };
     sessionStorage.setItem('professor_logged_in', 'true');
-    errorDiv.style.display = 'none';
-    checkLogin();
-  } else {
-    const errorSpan = errorDiv.querySelector('span');
-    if (errorSpan) {
-      errorSpan.textContent = 'Usuário ou senha incorretos!';
+    sessionStorage.setItem('professor_username', username);
+    updateProfessorLayout(true);
+    if (errorDiv) errorDiv.style.display = 'none';
+    
+    // Carrega alunos para o select
+    carregarAlunosParaSelect();
+    
+    // Atualiza último acesso
+    await profRef.update({
+      ultimoAcesso: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+  } catch (err) {
+    console.error('Erro ao fazer login:', err);
+    if (errorDiv) {
+      const span = errorDiv.querySelector('span');
+      if (span) span.textContent = 'Erro ao conectar com o banco de dados.';
+      errorDiv.style.display = 'flex';
     }
-    errorDiv.style.display = 'flex';
-    document.getElementById('login-password').value = '';
-    // Adiciona animação de shake
-    const loginCard = document.querySelector('#login-screen .card');
-    if (loginCard) {
-      loginCard.style.animation = 'shake 0.5s';
-      setTimeout(() => {
-        loginCard.style.animation = '';
-      }, 500);
-    }
-    setTimeout(() => {
-      errorDiv.style.display = 'none';
-    }, 5000);
   }
 }
 
 // Função de logout
 function handleLogout() {
   if (confirm('Deseja realmente sair?')) {
+    currentProfessorUser = null;
     sessionStorage.removeItem('professor_logged_in');
-    checkLogin();
+    sessionStorage.removeItem('professor_username');
+    updateProfessorLayout(false);
     document.getElementById('login-username').value = '';
     document.getElementById('login-password').value = '';
   }
@@ -89,8 +137,8 @@ function closeChangePasswordModal() {
   document.getElementById('password-success').style.display = 'none';
 }
 
-// Função para alterar senha
-function handleChangePassword(event) {
+// Função para alterar senha (salva no Firestore)
+async function handleChangePassword(event) {
   event.preventDefault();
   const currentPassword = document.getElementById('current-password').value;
   const newPassword = document.getElementById('new-password').value;
@@ -98,52 +146,87 @@ function handleChangePassword(event) {
   const errorDiv = document.getElementById('password-error');
   const successDiv = document.getElementById('password-success');
   
-  const storedPassword = localStorage.getItem('professor_password') || DEFAULT_PASSWORD;
-  
-  // Validações
-  if (currentPassword !== storedPassword) {
-    errorDiv.textContent = 'Senha atual incorreta!';
+  if (!currentProfessorUser || !window.firebaseDb) {
+    errorDiv.textContent = 'Erro: não conectado ao banco de dados.';
     errorDiv.style.display = 'block';
     successDiv.style.display = 'none';
     return;
   }
   
-  if (newPassword.length < 3) {
-    errorDiv.textContent = 'A nova senha deve ter pelo menos 3 caracteres!';
+  const username = currentProfessorUser.username;
+  
+  try {
+    // Busca a senha atual no Firestore
+    const profRef = window.firebaseDb.collection('professores').doc(username);
+    const doc = await profRef.get();
+    
+    if (!doc.exists) {
+      errorDiv.textContent = 'Usuário não encontrado!';
+      errorDiv.style.display = 'block';
+      successDiv.style.display = 'none';
+      return;
+    }
+    
+    const storedPassword = doc.data().password;
+    
+    // Validações
+    if (currentPassword !== storedPassword) {
+      errorDiv.textContent = 'Senha atual incorreta!';
+      errorDiv.style.display = 'block';
+      successDiv.style.display = 'none';
+      return;
+    }
+    
+    if (newPassword.length < 3) {
+      errorDiv.textContent = 'A nova senha deve ter pelo menos 3 caracteres!';
+      errorDiv.style.display = 'block';
+      successDiv.style.display = 'none';
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      errorDiv.textContent = 'As senhas não coincidem!';
+      errorDiv.style.display = 'block';
+      successDiv.style.display = 'none';
+      return;
+    }
+    
+    if (newPassword === currentPassword) {
+      errorDiv.textContent = 'A nova senha deve ser diferente da senha atual!';
+      errorDiv.style.display = 'block';
+      successDiv.style.display = 'none';
+      return;
+    }
+    
+    // Salva a nova senha no Firestore
+    await profRef.update({
+      password: newPassword,
+      senhaAlteradaEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Atualiza o objeto local
+    currentProfessorUser.password = newPassword;
+    
+    successDiv.textContent = 'Senha alterada com sucesso!';
+    successDiv.style.display = 'block';
+    errorDiv.style.display = 'none';
+    
+    // Limpa os campos
+    document.getElementById('current-password').value = '';
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+    
+    // Fecha o modal após 2 segundos
+    setTimeout(() => {
+      closeChangePasswordModal();
+    }, 2000);
+    
+  } catch (err) {
+    console.error('Erro ao alterar senha:', err);
+    errorDiv.textContent = 'Erro ao salvar nova senha. Tente novamente.';
     errorDiv.style.display = 'block';
     successDiv.style.display = 'none';
-    return;
   }
-  
-  if (newPassword !== confirmPassword) {
-    errorDiv.textContent = 'As senhas não coincidem!';
-    errorDiv.style.display = 'block';
-    successDiv.style.display = 'none';
-    return;
-  }
-  
-  if (newPassword === currentPassword) {
-    errorDiv.textContent = 'A nova senha deve ser diferente da senha atual!';
-    errorDiv.style.display = 'block';
-    successDiv.style.display = 'none';
-    return;
-  }
-  
-  // Salva a nova senha
-  localStorage.setItem('professor_password', newPassword);
-  successDiv.textContent = 'Senha alterada com sucesso!';
-  successDiv.style.display = 'block';
-  errorDiv.style.display = 'none';
-  
-  // Limpa os campos
-  document.getElementById('current-password').value = '';
-  document.getElementById('new-password').value = '';
-  document.getElementById('confirm-password').value = '';
-  
-  // Fecha o modal após 2 segundos
-  setTimeout(() => {
-    closeChangePasswordModal();
-  }, 2000);
 }
 
 // Fecha modal ao clicar fora
@@ -348,9 +431,543 @@ window.handleChangePassword = handleChangePassword;
 window.showChangePasswordModal = showChangePasswordModal;
 window.closeChangePasswordModal = closeChangePasswordModal;
 
+// Estatísticas do professor (Firestore)
+async function carregarAlunosParaSelect() {
+  const select = document.getElementById('stats-aluno-select');
+  if (!select || !window.firebaseDb) return;
+  select.innerHTML = '<option value=\"\">Selecione um aluno</option>';
+  try {
+    const snap = await window.firebaseDb.collection('alunos').orderBy('nome').get();
+    snap.forEach((doc) => {
+      const data = doc.data();
+      const opt = document.createElement('option');
+      opt.value = data.uid || doc.id;
+      opt.textContent = `${data.nome || '(sem nome)'} — ${data.turma || 'sem turma'}`;
+      select.appendChild(opt);
+    });
+  } catch (e) {
+    console.warn('Erro ao carregar alunos:', e);
+  }
+}
+
+// Variáveis globais para os gráficos
+let chartEvolucao = null;
+let chartDistribuicao = null;
+
+async function atualizarEstatisticasProfessor() {
+  if (!window.firebaseDb) {
+    alert('Firestore não configurado. Veja firebase-config.js.');
+    return;
+  }
+  const alunoId = document.getElementById('stats-aluno-select')?.value || '';
+  const dataInicio = document.getElementById('stats-data-inicio')?.value || '';
+  const dataFim = document.getElementById('stats-data-fim')?.value || '';
+
+  if (!alunoId) {
+    alert('Selecione um aluno para ver as estatísticas.');
+    return;
+  }
+
+  // Mostra loading
+  const resultadosDiv = document.getElementById('stats-resultados');
+  const graficosDiv = document.getElementById('stats-graficos-container');
+  const semDadosDiv = document.getElementById('stats-sem-dados');
+  
+  if (resultadosDiv) resultadosDiv.style.opacity = '0.5';
+  if (graficosDiv) graficosDiv.style.display = 'none';
+  if (semDadosDiv) semDadosDiv.style.display = 'none';
+
+  try {
+    // Busca todos os eventos do aluno (filtrando por data no cliente para evitar problemas de índice)
+    const eventosRef = window.firebaseDb.collection('eventos');
+    const query = eventosRef.where('uid', '==', alunoId);
+    const snap = await query.get();
+    
+    // Filtra por data no cliente
+    const inicioDate = dataInicio ? new Date(dataInicio + 'T00:00:00') : null;
+    const fimDate = dataFim ? new Date(dataFim + 'T23:59:59') : null;
+    
+    // Contadores gerais
+    let acessos = 0;
+    let cliques = 0;
+    let quizResp = 0;
+    let refs = 0;
+    
+    // Dados agrupados por data para gráfico
+    const dadosPorData = {};
+    const tiposEventos = {
+      'acesso_pagina': 0,
+      'clique': 0,
+      'quiz_resposta': 0,
+      'referencia_clique': 0
+    };
+
+    snap.forEach((doc) => {
+      const ev = doc.data();
+      const tipo = ev.tipo || '';
+      
+      // Filtra por data
+      let dataEvento = null;
+      if (ev.criadoEm) {
+        dataEvento = ev.criadoEm.toDate ? ev.criadoEm.toDate() : new Date(ev.criadoEm);
+        if (inicioDate && dataEvento < inicioDate) return;
+        if (fimDate && dataEvento > fimDate) return;
+      }
+      
+      // Contagem geral
+      if (tipo === 'acesso_pagina') {
+        acessos++;
+        tiposEventos['acesso_pagina']++;
+      } else if (tipo === 'quiz_resposta') {
+        quizResp++;
+        tiposEventos['quiz_resposta']++;
+      } else if (tipo.includes('referencia') || tipo === 'referencia_clique') {
+        refs++;
+        tiposEventos['referencia_clique']++;
+      } else if (tipo === 'clique' || (tipo.includes('clique') && !tipo.includes('referencia'))) {
+        cliques++;
+        tiposEventos['clique']++;
+      }
+
+      // Agrupa por data para gráfico de evolução
+      if (dataEvento) {
+        const dataKey = dataEvento.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        if (!dadosPorData[dataKey]) {
+          dadosPorData[dataKey] = {
+            acessos: 0,
+            cliques: 0,
+            quizzes: 0,
+            referencias: 0
+          };
+        }
+        
+        if (tipo === 'acesso_pagina') {
+          dadosPorData[dataKey].acessos++;
+        } else if (tipo === 'quiz_resposta') {
+          dadosPorData[dataKey].quizzes++;
+        } else if (tipo.includes('referencia') || tipo === 'referencia_clique') {
+          dadosPorData[dataKey].referencias++;
+        } else if (tipo === 'clique' || (tipo.includes('clique') && !tipo.includes('referencia'))) {
+          dadosPorData[dataKey].cliques++;
+        }
+      }
+    });
+
+    // Atualiza os cards de métricas
+    document.getElementById('stats-acessos-total').textContent = acessos;
+    document.getElementById('stats-cliques-total').textContent = cliques;
+    document.getElementById('stats-quiz-total').textContent = quizResp;
+    document.getElementById('stats-ref-total').textContent = refs;
+
+    // Mostra/oculta seções baseado em dados
+    if (snap.empty) {
+      if (semDadosDiv) semDadosDiv.style.display = 'block';
+      if (graficosDiv) graficosDiv.style.display = 'none';
+    } else {
+      if (semDadosDiv) semDadosDiv.style.display = 'none';
+      if (graficosDiv) graficosDiv.style.display = 'grid';
+      criarGraficos(dadosPorData, tiposEventos, dataInicio, dataFim);
+    }
+    
+    if (resultadosDiv) resultadosDiv.style.opacity = '1';
+
+  } catch (e) {
+    console.error('Erro ao carregar estatísticas:', e);
+    
+    // Tenta sem orderBy se falhar
+    if (e.message && e.message.includes('orderBy')) {
+      try {
+        let query2 = window.firebaseDb.collection('eventos').where('uid', '==', alunoId);
+        if (dataInicio) {
+          const inicioDate = new Date(dataInicio + 'T00:00:00');
+          query2 = query2.where('criadoEm', '>=', inicioDate);
+        }
+        if (dataFim) {
+          const fimDate = new Date(dataFim + 'T23:59:59');
+          query2 = query2.where('criadoEm', '<=', fimDate);
+        }
+        
+        const snap2 = await query2.get();
+        let acessos = 0, cliques = 0, quizResp = 0, refs = 0;
+        
+        snap2.forEach((doc) => {
+          const ev = doc.data();
+          const tipo = ev.tipo || '';
+          if (tipo === 'acesso_pagina') acessos++;
+          else if (tipo === 'clique' || tipo.includes('clique')) cliques++;
+          else if (tipo === 'quiz_resposta') quizResp++;
+          else if (tipo.includes('referencia')) refs++;
+        });
+        
+        document.getElementById('stats-acessos-total').textContent = acessos;
+        document.getElementById('stats-cliques-total').textContent = cliques;
+        document.getElementById('stats-quiz-total').textContent = quizResp;
+        document.getElementById('stats-ref-total').textContent = refs;
+        
+        if (snap2.empty) {
+          document.getElementById('stats-sem-dados').style.display = 'block';
+          document.getElementById('stats-graficos-container').style.display = 'none';
+        } else {
+          document.getElementById('stats-sem-dados').style.display = 'none';
+        }
+        
+        if (resultadosDiv) resultadosDiv.style.opacity = '1';
+        alert('Estatísticas carregadas (sem gráficos devido a limitação do Firestore).');
+      } catch (e2) {
+        alert('Erro ao carregar estatísticas. Veja o console para detalhes.');
+      }
+    } else {
+      alert('Erro ao carregar estatísticas. Veja o console para detalhes.');
+    }
+  }
+}
+
+function criarGraficos(dadosPorData, tiposEventos, dataInicio, dataFim) {
+  // Prepara dados para gráfico de evolução (linha)
+  const datas = Object.keys(dadosPorData).sort();
+  const labels = datas.map(d => {
+    const date = new Date(d);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  });
+  
+  const dadosAcessos = datas.map(d => dadosPorData[d].acessos);
+  const dadosCliques = datas.map(d => dadosPorData[d].cliques);
+  const dadosQuizzes = datas.map(d => dadosPorData[d].quizzes);
+  const dadosReferencias = datas.map(d => dadosPorData[d].referencias);
+  
+  // Mantém referência aos dados completos para o tooltip
+  const dadosCompletosPorData = dadosPorData;
+
+  // Gráfico de linha - Evolução
+  const ctxEvolucao = document.getElementById('stats-chart-evolucao');
+  if (ctxEvolucao) {
+    if (chartEvolucao) chartEvolucao.destroy();
+    
+    chartEvolucao = new Chart(ctxEvolucao, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Acessos',
+            data: dadosAcessos,
+            borderColor: 'rgb(37, 99, 235)',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: 'rgb(37, 99, 235)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            tension: 0.4,
+            fill: false
+          },
+          {
+            label: 'Cliques',
+            data: dadosCliques,
+            borderColor: 'rgb(139, 92, 246)',
+            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: 'rgb(139, 92, 246)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            tension: 0.4,
+            fill: false
+          },
+          {
+            label: 'Quizzes',
+            data: dadosQuizzes,
+            borderColor: 'rgb(16, 185, 129)',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: 'rgb(16, 185, 129)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            tension: 0.4,
+            fill: false
+          },
+          {
+            label: 'Referências',
+            data: dadosReferencias,
+            borderColor: 'rgb(239, 68, 68)',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: 'rgb(239, 68, 68)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            tension: 0.4,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
+        onHover: function(evt, activeElements) {
+          // Muda o cursor quando passar sobre pontos
+          evt.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              usePointStyle: true,
+              padding: 15,
+              font: {
+                size: 12,
+                weight: '500'
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            padding: 16,
+            titleFont: {
+              size: 14,
+              weight: 'bold'
+            },
+            bodyFont: {
+              size: 13
+            },
+            displayColors: true,
+            titleMarginBottom: 12,
+            bodySpacing: 8,
+            callbacks: {
+              title: function(context) {
+                const index = context[0].dataIndex;
+                const dataKey = datas[index];
+                if (dataKey) {
+                  const date = new Date(dataKey);
+                  return date.toLocaleDateString('pt-BR', { 
+                    weekday: 'long',
+                    day: '2-digit', 
+                    month: 'long', 
+                    year: 'numeric' 
+                  });
+                }
+                return context[0].label;
+              },
+              afterTitle: function(context) {
+                const index = context[0].dataIndex;
+                const dataKey = datas[index];
+                const dadosDia = dadosCompletosPorData[dataKey];
+                
+                if (!dadosDia) return '';
+                
+                const total = dadosDia.acessos + dadosDia.cliques + dadosDia.quizzes + dadosDia.referencias;
+                return '📊 Total: ' + total + ' atividades no dia';
+              },
+              label: function(context) {
+                const index = context.dataIndex;
+                const dataKey = datas[index];
+                const dadosDia = dadosCompletosPorData[dataKey];
+                
+                if (!dadosDia) {
+                  return context.dataset.label + ': ' + context.parsed.y;
+                }
+                
+                // Mostra todas as métricas do dia quando passar o mouse em qualquer ponto
+                // Retorna apenas uma vez com todas as métricas (apenas no primeiro dataset)
+                if (context.datasetIndex === 0) {
+                  return [
+                    '🔵 Acessos: ' + dadosDia.acessos,
+                    '🟣 Cliques: ' + dadosDia.cliques,
+                    '🟢 Quizzes: ' + dadosDia.quizzes,
+                    '🔴 Referências: ' + dadosDia.referencias
+                  ];
+                }
+                
+                // Para os outros datasets, retorna vazio para evitar duplicação
+                return '';
+              },
+              labelColor: function(context) {
+                const index = context.dataIndex;
+                const dataKey = datas[index];
+                const dadosDia = dadosCompletosPorData[dataKey];
+                
+                // Se for o primeiro dataset e tiver dados, mostra cores para todas as métricas
+                if (context.datasetIndex === 0 && dadosDia) {
+                  return [
+                    { borderColor: 'rgb(37, 99, 235)', backgroundColor: 'rgb(37, 99, 235)' },  // Acessos
+                    { borderColor: 'rgb(139, 92, 246)', backgroundColor: 'rgb(139, 92, 246)' }, // Cliques
+                    { borderColor: 'rgb(16, 185, 129)', backgroundColor: 'rgb(16, 185, 129)' }, // Quizzes
+                    { borderColor: 'rgb(239, 68, 68)', backgroundColor: 'rgb(239, 68, 68)' }    // Referências
+                  ];
+                }
+                
+                return {
+                  borderColor: context.dataset.borderColor,
+                  backgroundColor: context.dataset.borderColor
+                };
+              }
+            },
+            filter: function(tooltipItem) {
+              // Mostra apenas o primeiro dataset para evitar duplicação (já que ele mostra todas as métricas)
+              return tooltipItem.datasetIndex === 0;
+            }
+          },
+          title: {
+            display: false
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 11
+              },
+              maxRotation: 45,
+              minRotation: 0
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)',
+              drawBorder: false
+            },
+            ticks: {
+              precision: 0,
+              stepSize: 2,
+              font: {
+                size: 11
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Gráfico de pizza - Distribuição
+  const ctxDistribuicao = document.getElementById('stats-chart-distribuicao');
+  if (ctxDistribuicao) {
+    if (chartDistribuicao) chartDistribuicao.destroy();
+    
+    const total = tiposEventos['acesso_pagina'] + tiposEventos['clique'] + 
+                  tiposEventos['quiz_resposta'] + tiposEventos['referencia_clique'];
+    
+    if (total > 0) {
+      chartDistribuicao = new Chart(ctxDistribuicao, {
+        type: 'doughnut',
+        data: {
+          labels: ['Acessos', 'Cliques', 'Quizzes', 'Referências'],
+          datasets: [{
+            data: [
+              tiposEventos['acesso_pagina'],
+              tiposEventos['clique'],
+              tiposEventos['quiz_resposta'],
+              tiposEventos['referencia_clique']
+            ],
+            backgroundColor: [
+              'rgba(37, 99, 235, 0.8)',
+              'rgba(139, 92, 246, 0.8)',
+              'rgba(16, 185, 129, 0.8)',
+              'rgba(239, 68, 68, 0.8)'
+            ],
+            borderColor: [
+              'rgb(37, 99, 235)',
+              'rgb(139, 92, 246)',
+              'rgb(16, 185, 129)',
+              'rgb(239, 68, 68)'
+            ],
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                usePointStyle: true,
+                padding: 15,
+                font: {
+                  size: 12,
+                  weight: '500'
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 12,
+              titleFont: {
+                size: 13,
+                weight: 'bold'
+              },
+              bodyFont: {
+                size: 12
+              },
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed || 0;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                  return `${label}: ${value} (${percent}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+}
+
+window.atualizarEstatisticasProfessor = atualizarEstatisticasProfessor;
+
 // Inicialização
-document.addEventListener('DOMContentLoaded', () => {
-  initCredentials();
-  checkLogin();
+document.addEventListener('DOMContentLoaded', async () => {
+  // Inicializa credenciais padrão do professor no Firestore
+  await initProfessorCredentials();
+  
+  // Verifica se já está logado (sessionStorage)
+  const loggedIn = sessionStorage.getItem('professor_logged_in') === 'true';
+  const savedUsername = sessionStorage.getItem('professor_username');
+  
+  if (loggedIn && savedUsername) {
+    // Tenta validar o login novamente no Firestore
+    if (window.firebaseDb) {
+      try {
+        const profRef = window.firebaseDb.collection('professores').doc(savedUsername);
+        const doc = await profRef.get();
+        if (doc.exists) {
+          currentProfessorUser = { username: savedUsername, ...doc.data() };
+          updateProfessorLayout(true);
+          carregarAlunosParaSelect();
+          return;
+        }
+      } catch (err) {
+        console.error('Erro ao verificar login:', err);
+      }
+    }
+    // Se não conseguiu validar, limpa a sessão
+    sessionStorage.removeItem('professor_logged_in');
+    sessionStorage.removeItem('professor_username');
+  }
+  
+  // Mostra tela de login
+  updateProfessorLayout(false);
+  
+  // Carrega alunos para o select (mesmo sem estar logado, para quando logar)
+  if (window.firebaseDb) {
+    carregarAlunosParaSelect();
+  }
 });
 
