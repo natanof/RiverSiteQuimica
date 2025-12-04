@@ -145,19 +145,110 @@ const state = {
   activeContainer: null,
   selectedQuizTopic: null
 };
-function getProfessorQuestions(topic) {
-  const key = 'professor_questions_' + topic;
-  const saved = localStorage.getItem(key);
-  return saved ? JSON.parse(saved) : [];
+// Função assíncrona para buscar perguntas do professor do Firestore
+async function getProfessorQuestions(topic) {
+  if (!window.firebaseDb) {
+    console.warn('Firestore não disponível, retornando array vazio');
+    return [];
+  }
+  
+  try {
+    const docRef = window.firebaseDb.collection('perguntas_professor').doc(topic);
+    const doc = await docRef.get();
+    
+    if (doc.exists) {
+      const data = doc.data();
+      return data.questions || [];
+    }
+    return [];
+  } catch (error) {
+    console.error('Erro ao buscar perguntas do professor:', error);
+    return [];
+  }
 }
-function getCombinedQuestions(topic) {
+
+// Função assíncrona para salvar perguntas do professor no Firestore
+async function saveProfessorQuestions(topic, questions) {
+  if (!window.firebaseDb) {
+    console.warn('Firestore não disponível, não foi possível salvar');
+    return false;
+  }
+  
+  try {
+    const docRef = window.firebaseDb.collection('perguntas_professor').doc(topic);
+    await docRef.set({
+      topic: topic,
+      questions: questions,
+      atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('Erro ao salvar perguntas do professor:', error);
+    return false;
+  }
+}
+
+// Função para buscar perguntas combinadas (assíncrona)
+async function getCombinedQuestions(topic) {
   const def = quizzes[topic] || [];
-  const custom = getProfessorQuestions(topic);
+  const custom = await getProfessorQuestions(topic);
   return [...def, ...custom];
 }
-function getCurrentQuizForGeneral(){
+
+// Funções para salvar/carregar progresso dos alunos no Firestore
+async function salvarProgressoAluno() {
+  if (!window.firebaseDb || !window.firebaseAuth || !window.firebaseAuth.currentUser) {
+    return false;
+  }
+  
+  const user = window.firebaseAuth.currentUser;
+  try {
+    const docRef = window.firebaseDb.collection('progresso_alunos').doc(user.uid);
+    await docRef.set({
+      uid: user.uid,
+      email: user.email || null,
+      userAnswers: state.userAnswers,
+      completed: state.completed,
+      atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('Erro ao salvar progresso do aluno:', error);
+    return false;
+  }
+}
+
+async function carregarProgressoAluno() {
+  if (!window.firebaseDb || !window.firebaseAuth || !window.firebaseAuth.currentUser) {
+    return false;
+  }
+  
+  const user = window.firebaseAuth.currentUser;
+  try {
+    const docRef = window.firebaseDb.collection('progresso_alunos').doc(user.uid);
+    const doc = await docRef.get();
+    
+    if (doc.exists) {
+      const data = doc.data();
+      if (data.userAnswers) {
+        state.userAnswers = data.userAnswers;
+      }
+      if (data.completed) {
+        state.completed = data.completed;
+      }
+      updateProgress();
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Erro ao carregar progresso do aluno:', error);
+    return false;
+  }
+}
+
+async function getCurrentQuizForGeneral(){
   for(let topic of quizOrder){
-    const questions = getCombinedQuestions(topic);
+    const questions = await getCombinedQuestions(topic);
     const answered = state.userAnswers[topic].length;
     if(answered < questions.length){
       return topic;
@@ -165,11 +256,11 @@ function getCurrentQuizForGeneral(){
   }
   return null;
 }
-function mountQuizToContainer(topic, containerId){
+async function mountQuizToContainer(topic, containerId){
   const container = document.getElementById(containerId);
   if (!container) return;
   container.innerHTML = '';
-  const questions = getCombinedQuestions(topic);
+  const questions = await getCombinedQuestions(topic);
   const qIndex = Math.min(state.userAnswers[topic].length, questions.length);
   if(qIndex >= questions.length){
     const done = document.createElement('div');
@@ -247,16 +338,18 @@ function mountQuizToContainer(topic, containerId){
   const skip = document.createElement('button');
   skip.className = 'btn ghost';
   skip.textContent = 'Pular';
-  skip.onclick = () => {
+  skip.onclick = async () => {
     state.userAnswers[topic].push({ selected: null, correct: false, skipped:true });
-    const isQuizComplete = state.userAnswers[topic].length >= getCombinedQuestions(topic).length;
+    await salvarProgressoAluno();
+    const questions = await getCombinedQuestions(topic);
+    const isQuizComplete = state.userAnswers[topic].length >= questions.length;
     if (containerId === 'quiz-geral-container' && isQuizComplete) {
       // Se um tópico específico foi selecionado, mostra resumo
       if (state.selectedQuizTopic && state.selectedQuizTopic !== 'todos') {
-        setTimeout(() => {
+        setTimeout(async () => {
           const container = document.getElementById(containerId);
           if (container) {
-            const questions = getCombinedQuestions(topic);
+            const questions = await getCombinedQuestions(topic);
             const corrects = state.userAnswers[topic].filter(x => x.correct).length;
             const summary = document.createElement('div');
             summary.innerHTML = `
@@ -267,7 +360,7 @@ function mountQuizToContainer(topic, containerId){
                 <p style="margin:4px 0">Porcentagem: <strong>${Math.round((corrects/questions.length)*100)}%</strong></p>
               </div>
               <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap">
-                <button class="btn primary" onclick="resetQuiz('${topic}'); mountGeneralQuiz('${topic}')">Refazer Quiz</button>
+                <button class="btn primary" onclick="(async () => { await resetQuiz('${topic}'); await mountGeneralQuiz('${topic}'); })()">Refazer Quiz</button>
                 <button class="btn ghost" onclick="backToTopicSelection()">Escolher Outro Tópico</button>
               </div>
             `;
@@ -276,12 +369,12 @@ function mountQuizToContainer(topic, containerId){
           }
         }, 500);
       } else {
-        setTimeout(() => { mountGeneralQuiz('todos') }, 2000);
+        setTimeout(async () => { await mountGeneralQuiz('todos') }, 2000);
       }
     } else if (containerId === 'quiz-geral-container') {
-      mountQuizToContainer(topic, containerId);
+      await mountQuizToContainer(topic, containerId);
     } else {
-      mountQuizToContainer(topic, containerId);
+      await mountQuizToContainer(topic, containerId);
     }
   };
   btns.appendChild(send);
@@ -297,36 +390,40 @@ function mountQuizToContainer(topic, containerId){
   container.appendChild(qBlock);
   updateProgress();
 }
-function mountGeneralQuiz(topic = null){
+async function mountGeneralQuiz(topic = null){
   const container = document.getElementById('quiz-geral-container');
   if (!container) return;
   
   // Se um tópico específico foi selecionado, usa ele
   if (topic && topic !== 'todos') {
-    mountQuizToContainer(topic, 'quiz-geral-container');
+    await mountQuizToContainer(topic, 'quiz-geral-container');
     return;
   }
   
   // Se for "todos", usa o modo sequencial original
   if (topic === 'todos') {
-    const currentTopic = getCurrentQuizForGeneral();
+    const currentTopic = await getCurrentQuizForGeneral();
     if (!currentTopic){
+      // Busca todas as perguntas de forma assíncrona
+      const summaryPromises = quizOrder.map(async (topic) => {
+        const questions = await getCombinedQuestions(topic);
+        const corrects = state.userAnswers[topic].filter(x => x.correct).length;
+        return `<p style="margin:4px 0">${capitalize(topic)}: <strong>${corrects}</strong> de ${questions.length}</p>`;
+      });
+      const summaries = await Promise.all(summaryPromises);
+      
       container.innerHTML = `
         <h4 style="margin:0 0 10px 0">Parabéns! Você completou todos os quizzes!</h4>
         <div class="note">
           <p style="margin:6px 0"><strong>Resumo:</strong></p>
-          ${quizOrder.map(topic => {
-            const questions = getCombinedQuestions(topic);
-            const corrects = state.userAnswers[topic].filter(x => x.correct).length;
-            return `<p style="margin:4px 0">${capitalize(topic)}: <strong>${corrects}</strong> de ${questions.length}</p>`;
-          }).join('')}
+          ${summaries.join('')}
         </div>
         <button class="btn ghost" onclick="resetAllQuizzes()" style="margin-top:12px">Reiniciar todos os quizzes</button>
       `;
       updateProgress();
       return;
     }
-    mountQuizToContainer(currentTopic, 'quiz-geral-container');
+    await mountQuizToContainer(currentTopic, 'quiz-geral-container');
     return;
   }
   
@@ -339,14 +436,14 @@ function mountGeneralQuiz(topic = null){
   if (containerDiv) containerDiv.style.display = 'none';
   if (backBtn) backBtn.style.display = 'none';
 }
-function submitAnswer(topic, qIndex, containerId){
+async function submitAnswer(topic, qIndex, containerId){
   const container = document.getElementById(containerId);
   if (!container) return;
   const qBlock = container.querySelector('.question-row');
   if (!qBlock) return;
   const chosen = qBlock.querySelector('input[type=radio]:checked');
   const optionsEls = Array.from(qBlock.querySelectorAll('.option'));
-  const allQuestions = getCombinedQuestions(topic);
+  const allQuestions = await getCombinedQuestions(topic);
   const question = allQuestions[qIndex];
   const correctIndex = question.answer;
   if(!chosen){
@@ -357,6 +454,7 @@ function submitAnswer(topic, qIndex, containerId){
   const selectedIndex = Number(chosen.value);
   const isCorrect = (selectedIndex === correctIndex);
   state.userAnswers[topic].push({ selected: selectedIndex, correct: isCorrect, skipped:false });
+  await salvarProgressoAluno();
   optionsEls.forEach((optEl, i) => {
     optEl.classList.add('disabled');
     optEl.style.cursor = 'default';
@@ -407,14 +505,15 @@ function submitAnswer(topic, qIndex, containerId){
     logEvento('quiz_resposta', detalhe);
   } catch (e) {}
   updateProgress();
-  const isQuizComplete = state.userAnswers[topic].length >= getCombinedQuestions(topic).length;
-  setTimeout(()=> {
+  const questions = await getCombinedQuestions(topic);
+  const isQuizComplete = state.userAnswers[topic].length >= questions.length;
+  setTimeout(async ()=> {
     if (containerId === 'quiz-geral-container' && isQuizComplete) {
       // Se um tópico específico foi selecionado, mostra resumo e opção de voltar
       if (state.selectedQuizTopic && state.selectedQuizTopic !== 'todos') {
         const container = document.getElementById(containerId);
         if (container) {
-          const questions = getCombinedQuestions(topic);
+          const questions = await getCombinedQuestions(topic);
           const corrects = state.userAnswers[topic].filter(x => x.correct).length;
           const summary = document.createElement('div');
           summary.innerHTML = `
@@ -434,12 +533,12 @@ function submitAnswer(topic, qIndex, containerId){
         }
       } else {
         // Modo sequencial (todos os temas)
-        setTimeout(() => { mountGeneralQuiz('todos') }, 2000);
+        setTimeout(async () => { await mountGeneralQuiz('todos') }, 2000);
       }
     } else if (containerId === 'quiz-geral-container') {
-      mountQuizToContainer(topic, containerId);
+      await mountQuizToContainer(topic, containerId);
     } else {
-      mountQuizToContainer(topic, containerId);
+      await mountQuizToContainer(topic, containerId);
     }
   }, 2500);
 }
@@ -463,9 +562,10 @@ function showSection(id){
     if (sidebar) sidebar.classList.add('show');
     if (mainContainer) mainContainer.classList.remove('no-sidebar');
     // Mostra a seleção de tópicos ao entrar na seção de quiz
-    mountGeneralQuiz();
-    // Atualiza as estatísticas de progresso
-    setTimeout(() => updateQuizTopicStats(), 100);
+    mountGeneralQuiz().then(() => {
+      // Atualiza as estatísticas de progresso
+      setTimeout(() => updateQuizTopicStats(), 100);
+    });
     const startBtn = document.getElementById('start-quiz');
     if (startBtn) startBtn.textContent = 'Abrir quiz do tema';
   } else if (id === 'professor') {
@@ -479,23 +579,24 @@ function showSection(id){
     if (startBtn) startBtn.textContent = 'Abrir quiz do tema';
   }
 }
-document.getElementById('start-quiz').addEventListener('click', () => {
+document.getElementById('start-quiz').addEventListener('click', async () => {
   const activeSection = document.querySelector('.section.active');
   if (activeSection && activeSection.id === 'quizgeral') {
-    mountGeneralQuiz();
+    await mountGeneralQuiz();
     const qEl = document.getElementById('quiz-geral-container');
     if(qEl) qEl.scrollIntoView({behavior:'smooth', block:'center'});
   }
 });
-function resetAllQuizzes(){
+async function resetAllQuizzes(){
   if(!confirm('Deseja reiniciar todos os quizzes? Isso apagará seu progresso atual no quiz.')) return;
   state.userAnswers = { alcanos: [], alcenos: [], alcinos: [], oxigenados: [] };
   state.completed = { alcanos: false, alcenos: false, alcinos: false, oxigenados: false };
+  await salvarProgressoAluno();
   const activeSection = document.querySelector('.section.active');
   if (activeSection && activeSection.id === 'quizgeral') {
-    mountGeneralQuiz();
+    await mountGeneralQuiz();
   } else {
-    mountGeneralQuiz();
+    await mountGeneralQuiz();
   }
   updateProgress();
 }
@@ -524,10 +625,10 @@ function selectQuizTopic(topic) {
   }
   
   // Monta o quiz do tópico selecionado
-  mountGeneralQuiz(topic);
-  
-  // Atualiza as estatísticas após iniciar o quiz
-  setTimeout(() => updateQuizTopicStats(), 200);
+  mountGeneralQuiz(topic).then(() => {
+    // Atualiza as estatísticas após iniciar o quiz
+    setTimeout(() => updateQuizTopicStats(), 200);
+  });
 }
 
 // Função para voltar à seleção de tópicos
@@ -556,15 +657,15 @@ function backToTopicSelection() {
 }
 
 // Função para atualizar as estatísticas de progresso na seleção de tópicos
-function updateQuizTopicStats() {
+async function updateQuizTopicStats() {
   const topics = ['alcanos', 'alcenos', 'alcinos', 'oxigenados'];
   
-  topics.forEach(topic => {
+  for (const topic of topics) {
     const totalEl = document.getElementById(`${topic}-total`);
     const doneEl = document.getElementById(`${topic}-done`);
     
     if (totalEl && doneEl) {
-      const questions = getCombinedQuestions(topic);
+      const questions = await getCombinedQuestions(topic);
       const answered = state.userAnswers[topic].length;
       const corrects = state.userAnswers[topic].filter(x => x.correct).length;
       
@@ -583,7 +684,7 @@ function updateQuizTopicStats() {
         }
       }
     }
-  });
+  }
   
   // Atualiza o resumo geral
   const summaryEl = document.getElementById('quiz-progress-summary');
@@ -592,14 +693,14 @@ function updateQuizTopicStats() {
     let totalAnswered = 0;
     let totalCorrects = 0;
     
-    topics.forEach(topic => {
-      const questions = getCombinedQuestions(topic);
+    for (const topic of topics) {
+      const questions = await getCombinedQuestions(topic);
       const answered = state.userAnswers[topic].length;
       const corrects = state.userAnswers[topic].filter(x => x.correct).length;
       totalQuestions += questions.length;
       totalAnswered += answered;
       totalCorrects += corrects;
-    });
+    }
     
     if (totalQuestions > 0) {
       const percentage = Math.round((totalAnswered / totalQuestions) * 100);
@@ -614,19 +715,20 @@ function updateQuizTopicStats() {
 window.selectQuizTopic = selectQuizTopic;
 window.backToTopicSelection = backToTopicSelection;
 window.updateQuizTopicStats = updateQuizTopicStats;
-function resetQuiz(topic){
+async function resetQuiz(topic){
   state.userAnswers[topic] = [];
   state.completed[topic] = false;
+  await salvarProgressoAluno();
   const activeSection = document.querySelector('.section.active');
   if (activeSection && activeSection.id === 'quizgeral') {
     // Se há um tópico selecionado, mantém ele; senão, volta à seleção
     if (state.selectedQuizTopic) {
-      mountGeneralQuiz(state.selectedQuizTopic);
+      await mountGeneralQuiz(state.selectedQuizTopic);
     } else {
-      mountGeneralQuiz();
+      await mountGeneralQuiz();
     }
   } else {
-    mountGeneralQuiz();
+    await mountGeneralQuiz();
   }
   updateProgress();
 }
@@ -864,8 +966,8 @@ function closeAIChat() {
   aiChatVisible = false;
 }
 
-function openAIChatFromQuestion(topic, qIndex, selectedIndex) {
-  const allQuestions = getCombinedQuestions(topic);
+async function openAIChatFromQuestion(topic, qIndex, selectedIndex) {
+  const allQuestions = await getCombinedQuestions(topic);
   const q = allQuestions[qIndex];
   const base = q ? `Questão sobre ${topic}: "${q.q}". Você pode explicar por que a alternativa marcada está incorreta e qual é o raciocínio correto?` : '';
   const input = document.getElementById('ai-chat-input');
@@ -1120,9 +1222,11 @@ function initAlunoAuth() {
         .then((result) => {
           const user = result.user;
           logEvento('login', 'aluno_google_popup');
-          return carregarPerfilAluno(user).then((perfil) => {
+          return carregarPerfilAluno(user).then(async (perfil) => {
             currentAluno = user;
             atualizarUIAluno(user, perfil);
+            // Carrega o progresso do aluno do Firestore
+            await carregarProgressoAluno();
           });
         })
         .catch((err) => {
@@ -1162,6 +1266,8 @@ function initAlunoAuth() {
       if (user) {
         const perfil = await carregarPerfilAluno(user);
         atualizarUIAluno(user, perfil);
+        // Carrega o progresso do aluno do Firestore
+        await carregarProgressoAluno();
         logEvento('acesso_pagina', 'index_auth');
       } else {
         atualizarUIAluno(null, null);
@@ -1169,16 +1275,26 @@ function initAlunoAuth() {
     });
   }
 }
-function updateProgress(){
+async function updateProgress(){
   // Atualiza também as estatísticas dos tópicos
-  updateQuizTopicStats();
-  let total = quizOrder.reduce((sum, topic) => sum + getCombinedQuestions(topic).length, 0);
+  await updateQuizTopicStats();
+  // Calcula o total de perguntas de forma assíncrona
+  let total = 0;
+  for (const topic of quizOrder) {
+    const questions = await getCombinedQuestions(topic);
+    total += questions.length;
+  }
   const answered = Object.keys(state.userAnswers).reduce((s, k) => s + state.userAnswers[k].length, 0);
-  const pct = Math.round((answered/total) * 100);
+  const pct = total > 0 ? Math.round((answered/total) * 100) : 0;
   const bar = document.getElementById('progress');
+  const progressText = document.getElementById('progress-text');
+  
   if (bar) {
     bar.style.background = `linear-gradient(90deg, ${pct>66 ? 'var(--success)' : pct>33 ? 'var(--accent1)' : 'var(--danger)'} ${pct}%, rgba(0,0,0,0.04) ${pct}%)`;
-    bar.textContent = answered + '/' + total;
+  }
+  
+  if (progressText) {
+    progressText.textContent = `${answered}/${total}`;
   }
 }
 document.addEventListener('DOMContentLoaded', () => {

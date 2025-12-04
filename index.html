@@ -3004,15 +3004,16 @@
       <div class="quiz-panel" id="sidebar-quiz">
         <h3>Quiz rápido</h3>
         <div class="note">Escolha um tema no topo (Alcanos, Alcenos, Alcinos, Oxigenados). Cada tema tem 4 perguntas. Selecione a opção e envie — a resposta correta ficará verde e a errada em vermelho.</div>
-        <div style="margin-top:12px">
-          <strong>Progresso:</strong>
-          <div id="progress" style="height:8px;border-radius:6px;background:linear-gradient(90deg,#e9f6ff,#fff);margin-top:8px"></div>
+        <div style="margin-top:20px">
+          <strong style="display:block; margin-bottom:12px; font-size:0.95rem; color:var(--text-secondary)">Progresso:</strong>
+          <div id="progress" style="height:10px;border-radius:8px;background:linear-gradient(90deg,#e9f6ff,#fff);margin-top:0; margin-bottom:8px; transition:all 0.3s ease"></div>
+          <div id="progress-text" style="font-size:0.9rem; color:var(--muted); margin-top:4px; text-align:center; font-weight:500"></div>
         </div>
-        <div id="sidebar-cta" style="margin-top:12px">
-          <button class="btn primary" id="start-quiz">Abrir quiz do tema</button>
-          <button class="btn ghost" id="reset-all" title="Reiniciar quizzes">Reiniciar quizzes</button>
+        <div id="sidebar-cta" style="margin-top:24px; display:flex; flex-direction:column; gap:12px">
+          <button class="btn primary" id="start-quiz" style="width:100%">Abrir quiz do tema</button>
+          <button class="btn ghost" id="reset-all" title="Reiniciar quizzes" style="width:100%">Reiniciar quizzes</button>
         </div>
-        <div id="sidebar-hint" class="note" style="margin-top:10px">Dica: leia os cards do conteúdo antes de responder — imagens e exemplos ajudam muito!</div>
+        <div id="sidebar-hint" class="note" style="margin-top:20px">Dica: leia os cards do conteúdo antes de responder — imagens e exemplos ajudam muito!</div>
       </div>
     </aside>
   </main>

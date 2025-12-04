@@ -244,15 +244,14 @@ let professorState = {
 };
 
 // Funções do painel do professor (reutilizadas do script.js)
-function showProfessorPanel() {
+async function showProfessorPanel() {
   if (document.getElementById('professor-panel')) {
     document.getElementById('professor-panel').style.display = 'block';
-    selectProfessorTopic(professorState.currentTopic);
-    loadProfessorQuestions();
+    await selectProfessorTopic(professorState.currentTopic);
   }
 }
 
-function selectProfessorTopic(topic) {
+async function selectProfessorTopic(topic) {
   professorState.currentTopic = topic;
   const topicColors = {
     'alcanos': { bg: 'rgba(37,99,235,0.1)', border: 'rgba(37,99,235,0.3)', active: 'linear-gradient(135deg, #2563eb, #1e40af)' },
@@ -280,21 +279,53 @@ function selectProfessorTopic(topic) {
       }
     }
   });
-  loadProfessorQuestions();
+  await loadProfessorQuestions();
 }
 
-function getProfessorQuestions(topic) {
-  const key = 'professor_questions_' + topic;
-  const saved = localStorage.getItem(key);
-  return saved ? JSON.parse(saved) : [];
+// Função assíncrona para buscar perguntas do professor do Firestore
+async function getProfessorQuestions(topic) {
+  if (!window.firebaseDb) {
+    console.warn('Firestore não disponível, retornando array vazio');
+    return [];
+  }
+  
+  try {
+    const docRef = window.firebaseDb.collection('perguntas_professor').doc(topic);
+    const doc = await docRef.get();
+    
+    if (doc.exists) {
+      const data = doc.data();
+      return data.questions || [];
+    }
+    return [];
+  } catch (error) {
+    console.error('Erro ao buscar perguntas do professor:', error);
+    return [];
+  }
 }
 
-function saveProfessorQuestions(topic, questions) {
-  const key = 'professor_questions_' + topic;
-  localStorage.setItem(key, JSON.stringify(questions));
+// Função assíncrona para salvar perguntas do professor no Firestore
+async function saveProfessorQuestions(topic, questions) {
+  if (!window.firebaseDb) {
+    console.warn('Firestore não disponível, não foi possível salvar');
+    return false;
+  }
+  
+  try {
+    const docRef = window.firebaseDb.collection('perguntas_professor').doc(topic);
+    await docRef.set({
+      topic: topic,
+      questions: questions,
+      atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('Erro ao salvar perguntas do professor:', error);
+    return false;
+  }
 }
 
-function addProfessorQuestion() {
+async function addProfessorQuestion() {
   const topic = professorState.currentTopic;
   const questionText = document.getElementById('prof-question-text').value.trim();
   const options = [
@@ -325,12 +356,16 @@ function addProfessorQuestion() {
     id: Date.now()
   };
   
-  const questions = getProfessorQuestions(topic);
+  const questions = await getProfessorQuestions(topic);
   questions.push(newQuestion);
-  saveProfessorQuestions(topic, questions);
-  clearProfessorForm();
-  loadProfessorQuestions();
-  alert('Pergunta adicionada com sucesso!');
+  const saved = await saveProfessorQuestions(topic, questions);
+  if (saved) {
+    clearProfessorForm();
+    await loadProfessorQuestions();
+    alert('Pergunta adicionada com sucesso!');
+  } else {
+    alert('Erro ao salvar pergunta. Verifique sua conexão e tente novamente.');
+  }
 }
 
 function clearProfessorForm() {
@@ -342,9 +377,9 @@ function clearProfessorForm() {
   document.querySelectorAll('input[name="prof-correct-answer"]').forEach(r => r.checked = false);
 }
 
-function loadProfessorQuestions() {
+async function loadProfessorQuestions() {
   const topic = professorState.currentTopic;
-  const questions = getProfessorQuestions(topic);
+  const questions = await getProfessorQuestions(topic);
   const container = document.getElementById('professor-questions-list');
   const countEl = document.getElementById('prof-question-count');
   
@@ -395,7 +430,7 @@ function loadProfessorQuestions() {
             `).join('')}
           </div>
         </div>
-        <button class="btn ghost" onclick="deleteProfessorQuestion(${q.id})" 
+        <button class="btn ghost" onclick="(async () => { await deleteProfessorQuestion(${q.id}); })()" 
                 style="color:#ef4444; border-color:rgba(239,68,68,0.3); flex-shrink:0; padding:12px 20px; font-weight:600; transition:all 0.3s; display:flex; align-items:center; gap:8px"
                 onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.05)'"
                 onmouseout="this.style.background=''; this.style.borderColor='rgba(239,68,68,0.3)'; this.style.transform='scale(1)'">
@@ -410,14 +445,18 @@ function loadProfessorQuestions() {
   `).join('');
 }
 
-function deleteProfessorQuestion(id) {
+async function deleteProfessorQuestion(id) {
   if (!confirm('Deseja realmente excluir esta pergunta?')) return;
   
   const topic = professorState.currentTopic;
-  const questions = getProfessorQuestions(topic);
+  const questions = await getProfessorQuestions(topic);
   const filtered = questions.filter(q => q.id !== id);
-  saveProfessorQuestions(topic, filtered);
-  loadProfessorQuestions();
+  const saved = await saveProfessorQuestions(topic, filtered);
+  if (saved) {
+    await loadProfessorQuestions();
+  } else {
+    alert('Erro ao excluir pergunta. Verifique sua conexão e tente novamente.');
+  }
 }
 
 // Exporta funções para uso global
