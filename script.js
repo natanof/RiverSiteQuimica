@@ -1253,27 +1253,172 @@ function appendAIMessage(sender, text) {
   box.scrollTop = box.scrollHeight;
 }
 
+// Configuração da API de IA
+// URL do Cloudflare Worker que faz proxy da API do Hugging Face
+const AI_WORKER_URL = 'https://ai-proxy.natanaelrodriguesfernandes521.workers.dev';
+
 async function sendAIMessage(rawQuestion, context) {
   const question = rawQuestion.trim();
   if (!question) return;
   appendAIMessage('user', question);
 
-  // Exemplo de chamada para backend de IA (stub)
-  // Ajuste a URL / payload conforme o backend real (ex.: Firebase Functions, API externa, etc.)
-  try {
-    // Exemplo comentado de requisição real:
-    // const resp = await fetch('/api/ia', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ pergunta: question, contexto: context })
-    // });
-    // const data = await resp.json();
-    // const answer = data.resposta;
-
-    appendAIMessage('ia', 'Erro ao processar a solicitação. Tente novamente mais tarde.');
-  } catch (e) {
-    appendAIMessage('ia', 'Erro ao processar a solicitação. Tente novamente mais tarde.');
+  // Mostra indicador de carregamento
+  const loadingMsg = document.createElement('div');
+  loadingMsg.id = 'ai-loading-msg';
+  loadingMsg.style.marginBottom = '6px';
+  loadingMsg.style.color = '#64748b';
+  loadingMsg.innerHTML = '<strong style="color:#2563eb">IA:</strong> <span>Pensando...</span>';
+  const box = document.getElementById('ai-chat-messages');
+  if (box) {
+    box.appendChild(loadingMsg);
+    box.scrollTop = box.scrollHeight;
   }
+
+  try {
+    // Prepara o prompt com contexto
+    let prompt = `Você é um assistente especializado em química orgânica. Responda de forma clara, didática e em português brasileiro.
+
+${context && context.topic ? `Contexto: Esta pergunta é sobre ${context.topic}. ` : ''}
+${context && context.question ? `Questão relacionada: "${context.question}" ` : ''}
+
+Pergunta do aluno: ${question}
+
+Resposta:`;
+
+    const model = 'mistralai/Mistral-7B-Instruct-v0.2';
+    
+    // Se tiver worker configurado, usa ele; senão, usa proxy público ou API alternativa
+    let apiUrl;
+    let requestBody;
+    
+    if (AI_WORKER_URL) {
+      // Usa worker próprio (Cloudflare Worker que faz proxy)
+      apiUrl = AI_WORKER_URL;
+      requestBody = {
+        model: model,
+        data: {
+          inputs: prompt,
+          parameters: {
+            max_new_tokens: 512,
+            temperature: 0.7,
+            return_full_text: false,
+            top_p: 0.9
+          }
+        }
+      };
+    } else {
+      // Usa API alternativa que suporta CORS: Together AI ou outra
+      // Alternativa: usar proxy público CORS (não recomendado para produção)
+      // Vou usar uma solução que funciona diretamente: Together AI (gratuito com limites)
+      apiUrl = 'https://api.together.xyz/inference';
+      requestBody = {
+        model: 'mistralai/Mixtral-8x7B-Instruct-v0.1',
+        prompt: prompt,
+        max_tokens: 512,
+        temperature: 0.7,
+        top_p: 0.9,
+        repetition_penalty: 1.1
+      };
+    }
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(AI_WORKER_URL ? {} : {
+          // Para Together AI, você precisaria de uma API key gratuita
+          // Por enquanto, vamos usar uma solução que funciona sem API key
+        })
+      },
+      body: JSON.stringify(requestBody),
+      cache: 'no-store' // Evita cache sem usar header Cache-Control
+    });
+
+    if (!response.ok) {
+      // Se falhar com erro 410 (Gone), o worker pode ter sido removido
+      if (response.status === 410 && AI_WORKER_URL) {
+        console.warn('Worker retornou 410 (Gone). Pode precisar ser redeployado.');
+        if (loadingMsg) loadingMsg.remove();
+        appendAIMessage('ia', 'O serviço de IA está temporariamente indisponível. Usando respostas locais...');
+        return await useLocalAIFallback(question, context, null);
+      }
+      
+      // Para outros erros, tenta usar solução alternativa
+      return await useLocalAIFallback(question, context, loadingMsg);
+    }
+
+    const data = await response.json();
+    
+    // Remove mensagem de carregamento
+    if (loadingMsg) loadingMsg.remove();
+    
+    // Extrai a resposta
+    let answer = '';
+    if (AI_WORKER_URL) {
+      // Resposta do worker (formato Hugging Face)
+      if (Array.isArray(data) && data[0] && data[0].generated_text) {
+        answer = data[0].generated_text.trim();
+      } else if (data.generated_text) {
+        answer = data.generated_text.trim();
+      }
+    } else {
+      // Resposta do Together AI ou outro formato
+      if (data.output && data.output.choices && data.output.choices[0]) {
+        answer = data.output.choices[0].text.trim();
+      } else if (data.choices && data.choices[0]) {
+        answer = data.choices[0].text.trim();
+      }
+    }
+
+    // Limpa a resposta
+    if (answer) {
+      answer = answer.split('\n\n')[0].trim();
+      answer = answer.replace(/^(Resposta:|Resposta do assistente:)\s*/i, '').trim();
+    }
+    
+    if (!answer || answer.length < 10) {
+      return await useLocalAIFallback(question, context, loadingMsg);
+    }
+
+    appendAIMessage('ia', answer);
+  } catch (e) {
+    console.error('Erro ao chamar API de IA:', e);
+    
+    // Remove mensagem de carregamento
+    if (loadingMsg) loadingMsg.remove();
+    
+    // Usa fallback local
+    await useLocalAIFallback(question, context, null);
+  }
+}
+
+// Fallback: Respostas pré-definidas baseadas em palavras-chave (funciona sem API)
+async function useLocalAIFallback(question, context, loadingMsg) {
+  if (loadingMsg) loadingMsg.remove();
+  
+  const qLower = question.toLowerCase();
+  let answer = '';
+  
+  // Respostas baseadas em palavras-chave para química orgânica
+  if (qLower.includes('alcano') || qLower.includes('alcanos')) {
+    answer = 'Alcanos são hidrocarbonetos saturados com apenas ligações simples C-C. Sua fórmula geral é CₙH₂ₙ₊₂. Exemplos: metano (CH₄), etano (C₂H₆), propano (C₃H₈). São apolares, insolúveis em água e têm baixa reatividade.';
+  } else if (qLower.includes('alceno') || qLower.includes('alcenos') || qLower.includes('dupla ligação')) {
+    answer = 'Alcenos são hidrocarbonetos insaturados com uma dupla ligação C=C. Fórmula geral: CₙH₂ₙ. São mais reativos que alcanos devido à dupla ligação. Exemplos: eteno (C₂H₄), propeno (C₃H₆).';
+  } else if (qLower.includes('alcino') || qLower.includes('alcinos') || qLower.includes('tripla ligação')) {
+    answer = 'Alcinos são hidrocarbonetos insaturados com uma tripla ligação C≡C. Fórmula geral: CₙH₂ₙ₋₂. São ainda mais reativos que alcenos. Exemplo: etino ou acetileno (C₂H₂).';
+  } else if (qLower.includes('oxigenado') || qLower.includes('álcool') || qLower.includes('aldeído') || qLower.includes('cetona') || qLower.includes('ácido')) {
+    answer = 'Compostos oxigenados contêm grupos funcionais com oxigênio: álcoois (-OH), aldeídos (-CHO), cetonas (C=O), ácidos carboxílicos (-COOH), éteres (C-O-C) e ésteres. Cada grupo funcional confere propriedades químicas específicas.';
+  } else if (qLower.includes('nomenclatura') || qLower.includes('nomear') || qLower.includes('nome')) {
+    answer = 'A nomenclatura IUPAC segue regras: 1) Identificar a cadeia principal mais longa, 2) Numerar dando menor número aos substituintes, 3) Nomear os radicais em ordem alfabética, 4) Indicar posições. Exemplo: 2-metilbutano.';
+  } else if (qLower.includes('isomeria') || qLower.includes('isômero')) {
+    answer = 'Isômeros são compostos com mesma fórmula molecular mas estruturas diferentes. Tipos: estrutural (cadeia, posição, função) e estereoisomeria (geométrica, óptica).';
+  } else if (qLower.includes('reatividade') || qLower.includes('reação')) {
+    answer = 'A reatividade depende da estrutura: alcanos são pouco reativos (ligações fortes), alcenos/alcinos são mais reativos (ligações π), compostos oxigenados têm reatividade específica de cada grupo funcional.';
+  } else {
+    answer = 'Desculpe, não consegui processar sua pergunta através da API. Por favor, seja mais específico sobre o tópico de química orgânica (alcanos, alcenos, alcinos, compostos oxigenados, nomenclatura, etc.) ou tente novamente mais tarde.';
+  }
+  
+  appendAIMessage('ia', answer);
 }
 
 function openAIChat() {
