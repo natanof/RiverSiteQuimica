@@ -579,14 +579,17 @@ function showSection(id){
     if (startBtn) startBtn.textContent = 'Abrir quiz do tema';
   }
 }
-document.getElementById('start-quiz').addEventListener('click', async () => {
-  const activeSection = document.querySelector('.section.active');
-  if (activeSection && activeSection.id === 'quizgeral') {
-    await mountGeneralQuiz();
-    const qEl = document.getElementById('quiz-geral-container');
-    if(qEl) qEl.scrollIntoView({behavior:'smooth', block:'center'});
-  }
-});
+const startQuizBtn = document.getElementById('start-quiz');
+if (startQuizBtn) {
+  startQuizBtn.addEventListener('click', async () => {
+    const activeSection = document.querySelector('.section.active');
+    if (activeSection && activeSection.id === 'quizgeral') {
+      await mountGeneralQuiz();
+      const qEl = document.getElementById('quiz-geral-container');
+      if(qEl) qEl.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  });
+}
 async function resetAllQuizzes(){
   if(!confirm('Deseja reiniciar todos os quizzes? Isso apagará seu progresso atual no quiz.')) return;
   state.userAnswers = { alcanos: [], alcenos: [], alcinos: [], oxigenados: [] };
@@ -601,7 +604,10 @@ async function resetAllQuizzes(){
   updateProgress();
 }
 window.resetAllQuizzes = resetAllQuizzes;
-document.getElementById('reset-all').addEventListener('click', resetAllQuizzes);
+const resetAllBtn = document.getElementById('reset-all');
+if (resetAllBtn) {
+  resetAllBtn.addEventListener('click', resetAllQuizzes);
+}
 
 // Função para selecionar um tópico de quiz
 function selectQuizTopic(topic) {
