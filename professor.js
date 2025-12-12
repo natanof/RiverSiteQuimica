@@ -229,6 +229,27 @@ async function handleChangePassword(event) {
   }
 }
 
+// Função para alternar visibilidade da senha
+function togglePasswordVisibility(inputId, toggleId) {
+  const input = document.getElementById(inputId);
+  const toggle = document.getElementById(toggleId);
+  const icon = document.getElementById(toggleId + '-icon');
+  
+  if (!input || !icon) return;
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    // Ícone de olho aberto (mostrando senha)
+    icon.innerHTML = '<path d="M12 9a3 3 0 1 0 0 6a3 3 0 0 0 0-6m0 8a5 5 0 1 1 0-10a5 5 0 0 1 0 10m0-12C7 5 2.73 8.11 1 12.5C2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5"/>';
+    if (toggle) toggle.setAttribute('aria-label', 'Ocultar senha');
+  } else {
+    input.type = 'password';
+    // Ícone de olho fechado (ocultando senha) - o SVG fornecido
+    icon.innerHTML = '<path d="M12 17.5c-3.8 0-7.2-2.1-8.8-5.5H1c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5h-2.2c-1.6 3.4-5 5.5-8.8 5.5"/>';
+    if (toggle) toggle.setAttribute('aria-label', 'Mostrar senha');
+  }
+}
+
 // Fecha modal ao clicar fora
 document.addEventListener('click', (e) => {
   const modal = document.getElementById('change-password-modal');

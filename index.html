@@ -25,8 +25,13 @@
       </svg>
     </div>
     <div class="title">
-      <h1>Química Orgânica Interativa</h1>
+      <h1>Quízmica</h1>
       <p>Alcanos • Alcenos • Alcinos • Compostos oxigenados — guia didático com ilustrações e quizzes</p>
+    </div>
+    <div class="header-logo-right" style="flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-left:auto">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Instituto_Federal_do_Tocantins_-_Marca_Vertical_2015.svg/1200px-Instituto_Federal_do_Tocantins_-_Marca_Vertical_2015.svg.png" 
+           alt="Instituto Federal do Tocantins" 
+           class="ifto-logo">
     </div>
   </header>
   <nav>
@@ -56,6 +61,12 @@
         </g>
       </svg>
       <span>Quiz</span>
+    </button>
+    <button class="nav-btn" data-target="about" style="display:inline-flex; align-items:center; gap:8px">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512" style="flex-shrink:0">
+        <path fill="currentColor" fill-rule="evenodd" d="M256 42.667c117.822 0 213.334 95.512 213.334 213.333c0 117.82-95.512 213.334-213.334 213.334c-117.82 0-213.333-95.513-213.333-213.334S138.18 42.667 256 42.667m21.38 192h-42.666v128h42.666zM256.217 144c-15.554 0-26.837 11.22-26.837 26.371c0 15.764 10.986 26.963 26.837 26.963c15.235 0 26.497-11.2 26.497-26.667c0-15.446-11.262-26.667-26.497-26.667"/>
+      </svg>
+      <span>Sobre</span>
     </button>
     <button class="nav-btn" onclick="window.location.href='professor.html'" style="background:linear-gradient(135deg, #8b5cf6, #6366f1); color:white; border-color:transparent; display:inline-flex; align-items:center; gap:8px">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 256 256" style="flex-shrink:0">
@@ -718,53 +729,6 @@
         </div>
 
         <div style="max-width:900px; margin:0 auto">
-          <!-- Perfil do Aluno -->
-          <div class="card" style="margin-bottom:24px; border:1px solid var(--border); background:white">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
-              <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #2563eb, #3b82f6); display:flex; align-items:center; justify-content:center">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-              </div>
-              <h4 style="margin:0; font-size:1.1rem; color:#1e40af">Minha Conta</h4>
-            </div>
-            
-            <div id="aluno-status" style="font-size:0.9rem; color:#64748b; margin-bottom:16px">Não conectado</div>
-            
-            <button id="aluno-google-btn" class="btn primary" style="display:inline-flex; align-items:center; gap:8px; margin-bottom:16px">
-              <svg width="18" height="18" viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#4285f4" d="M533.5 278.4c0-17.4-1.6-34.1-4.7-50.3H272v95.2h147c-6.4 34.6-25.9 63.9-55.3 83.5v68.9h89.2c52.2-48.1 80.6-119 80.6-197.3z"/>
-                <path fill="#34a853" d="M272 544.3c72.9 0 134.1-24.1 178.8-65.6l-89.2-68.9c-24.8 16.7-56.6 26.6-89.6 26.6-68.9 0-127.3-46.5-148.3-109.1H31.2v68.6C75.6 486.4 167.5 544.3 272 544.3z"/>
-                <path fill="#fbbc05" d="M123.7 327.3c-7.4-22-11.6-45.5-11.6-69.3s4.2-47.3 11.6-69.3v-68.6H31.2C11.3 158.4 0 203.7 0 258s11.3 99.6 31.2 138.7l92.5-69.4z"/>
-                <path fill="#ea4335" d="M272 107.7c39.6 0 75.1 13.6 103.1 40.4l77.3-77.3C406 24.6 344.9 0 272 0 167.5 0 75.6 57.9 31.2 149.3l92.5 69.4C144.7 154.2 203.1 107.7 272 107.7z"/>
-              </svg>
-              <span id="aluno-google-btn-text">Entrar com Google</span>
-            </button>
-
-            <div id="aluno-perfil" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border)">
-              <div style="font-size:0.9rem; color:#0f172a; margin-bottom:16px">
-                <strong id="aluno-display-name"></strong><br>
-                <span id="aluno-display-email" style="color:#64748b; font-size:0.85rem"></span>
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px">
-                <div>
-                  <label style="font-weight:500; font-size:0.85rem; color:#64748b; display:block; margin-bottom:6px" for="aluno-nome-input">Nome</label>
-                  <input id="aluno-nome-input" type="text" placeholder="Seu nome" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit; font-size:0.9rem">
-                </div>
-                <div>
-                  <label style="font-weight:500; font-size:0.85rem; color:#64748b; display:block; margin-bottom:6px" for="aluno-turma-input">Turma</label>
-                  <input id="aluno-turma-input" type="text" placeholder="Ex.: 1ºA" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit; font-size:0.9rem">
-                </div>
-              </div>
-              <div style="display:flex; gap:8px">
-                <button id="aluno-salvar-perfil" class="btn ghost" style="flex:1; padding:8px 12px; font-size:0.9rem">Salvar</button>
-                <button id="aluno-logout-btn" class="btn ghost" style="flex:1; padding:8px 12px; font-size:0.9rem; border-color:rgba(239,68,68,0.3); color:#ef4444">Sair</button>
-              </div>
-              <div id="aluno-perfil-msg" style="font-size:0.85rem; color:#16a34a; display:none; margin-top:8px">✓ Perfil salvo</div>
-            </div>
-          </div>
-
           <!-- Calculadora de Massa Molecular -->
           <div class="card" style="margin-bottom:24px; border:1px solid var(--border); background:white">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
@@ -778,8 +742,87 @@
               <h4 style="margin:0; font-size:1.1rem; color:#1e40af">Massa Molecular</h4>
             </div>
             
-            <div style="display:flex; flex-direction:column; gap:12px">
-              <input id="massa-formula-input" type="text" placeholder="Digite a fórmula (ex: H2O, C6H12O6)" style="padding:12px 14px; border-radius:10px; border:2px solid var(--border); font-size:1rem; font-family:inherit; width:100%">
+            <div style="display:flex; flex-direction:column; gap:12px; position:relative">
+              <div style="position:relative; width:100%">
+                <input id="massa-formula-input" type="text" placeholder="Digite a fórmula (ex: H2O, C6H12O6)" style="padding:12px 50px 12px 14px; border-radius:10px; border:2px solid var(--border); font-size:1rem; font-family:inherit; width:100%; background:transparent; position:relative; z-index:2; color:transparent; caret-color:#2563eb">
+                <div id="massa-formula-display" style="position:absolute; top:0; left:0; right:0; bottom:0; padding:12px 50px 12px 14px; border-radius:10px; border:2px solid transparent; font-size:1rem; font-family:inherit; pointer-events:none; z-index:1; display:flex; align-items:center; color:#0f172a; white-space:pre; overflow:hidden"></div>
+                <button id="massa-keyboard-toggle" type="button" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:rgba(37,99,235,0.1); border:1px solid rgba(37,99,235,0.2); border-radius:8px; padding:6px; cursor:pointer; z-index:3; display:flex; align-items:center; justify-content:center; transition:all 0.2s" onmouseover="this.style.background='rgba(37,99,235,0.15)'; this.style.borderColor='rgba(37,99,235,0.3)'" onmouseout="this.style.background='rgba(37,99,235,0.1)'; this.style.borderColor='rgba(37,99,235,0.2)'">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" style="color:#2563eb">
+                    <g fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M21.5 12.95v-1.9c0-4.03 0-6.046-1.391-7.298S16.479 2.5 12 2.5c-4.478 0-6.718 0-8.109 1.252S2.5 7.02 2.5 11.05v1.9c0 4.03 0 6.046 1.391 7.298S7.521 21.5 12 21.5c4.478 0 6.718 0 8.109-1.252S21.5 16.98 21.5 12.95Z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M18 8h-4m2-2v4m2 7.5h-4m4-3h-4m-4 3l-1.75-1.75m0 0L6.5 14m1.75 1.75L10 14m-1.75 1.75L6.5 17.5M10 8H6"/>
+                    </g>
+                  </svg>
+                </button>
+              </div>
+              
+              <!-- Teclado Virtual -->
+              <div id="massa-keyboard" style="display:none; padding:16px; background:white; border:2px solid rgba(37,99,235,0.2); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.1)">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+                  <h4 style="margin:0; color:#1e40af; font-size:1rem">Teclado de Fórmulas</h4>
+                  <button type="button" onclick="closeMassaKeyboard()" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:1.5rem; padding:0; width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:4px" onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#ef4444'" onmouseout="this.style.background='none'; this.style.color='#64748b'">×</button>
+                </div>
+                
+                <!-- Elementos Químicos Comuns -->
+                <div style="margin-bottom:12px">
+                  <label style="font-size:0.85rem; color:#64748b; font-weight:600; display:block; margin-bottom:8px">Elementos:</label>
+                  <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(50px, 1fr)); gap:6px">
+                    <button type="button" class="keyboard-btn" data-char="H">H</button>
+                    <button type="button" class="keyboard-btn" data-char="He">He</button>
+                    <button type="button" class="keyboard-btn" data-char="Li">Li</button>
+                    <button type="button" class="keyboard-btn" data-char="C">C</button>
+                    <button type="button" class="keyboard-btn" data-char="N">N</button>
+                    <button type="button" class="keyboard-btn" data-char="O">O</button>
+                    <button type="button" class="keyboard-btn" data-char="F">F</button>
+                    <button type="button" class="keyboard-btn" data-char="Ne">Ne</button>
+                    <button type="button" class="keyboard-btn" data-char="Na">Na</button>
+                    <button type="button" class="keyboard-btn" data-char="Mg">Mg</button>
+                    <button type="button" class="keyboard-btn" data-char="Al">Al</button>
+                    <button type="button" class="keyboard-btn" data-char="Si">Si</button>
+                    <button type="button" class="keyboard-btn" data-char="P">P</button>
+                    <button type="button" class="keyboard-btn" data-char="S">S</button>
+                    <button type="button" class="keyboard-btn" data-char="Cl">Cl</button>
+                    <button type="button" class="keyboard-btn" data-char="K">K</button>
+                    <button type="button" class="keyboard-btn" data-char="Ca">Ca</button>
+                    <button type="button" class="keyboard-btn" data-char="Fe">Fe</button>
+                    <button type="button" class="keyboard-btn" data-char="Cu">Cu</button>
+                    <button type="button" class="keyboard-btn" data-char="Zn">Zn</button>
+                  </div>
+                </div>
+                
+                <!-- Números -->
+                <div style="margin-bottom:12px">
+                  <label style="font-size:0.85rem; color:#64748b; font-weight:600; display:block; margin-bottom:8px">Números:</label>
+                  <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:6px">
+                    <button type="button" class="keyboard-btn" data-char="1">1</button>
+                    <button type="button" class="keyboard-btn" data-char="2">2</button>
+                    <button type="button" class="keyboard-btn" data-char="3">3</button>
+                    <button type="button" class="keyboard-btn" data-char="4">4</button>
+                    <button type="button" class="keyboard-btn" data-char="5">5</button>
+                    <button type="button" class="keyboard-btn" data-char="6">6</button>
+                    <button type="button" class="keyboard-btn" data-char="7">7</button>
+                    <button type="button" class="keyboard-btn" data-char="8">8</button>
+                    <button type="button" class="keyboard-btn" data-char="9">9</button>
+                    <button type="button" class="keyboard-btn" data-char="0">0</button>
+                  </div>
+                </div>
+                
+                <!-- Símbolos Especiais -->
+                <div>
+                  <label style="font-size:0.85rem; color:#64748b; font-weight:600; display:block; margin-bottom:8px">Símbolos:</label>
+                  <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px">
+                    <button type="button" class="keyboard-btn" data-char="(">(</button>
+                    <button type="button" class="keyboard-btn" data-char=")">)</button>
+                    <button type="button" class="keyboard-btn" data-char="·">·</button>
+                    <button type="button" class="keyboard-btn keyboard-btn-danger" onclick="deleteLastChar()" style="background:rgba(239,68,68,0.1); color:#ef4444; border-color:rgba(239,68,68,0.3)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                        <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m13.5 10l4 4m0-4l-4 4m6.095 4.5H9.298a2 2 0 0 1-1.396-.568l-5.35-5.216a1 1 0 0 1 0-1.432l5.35-5.216A2 2 0 0 1 9.298 5.5h10.297c.95 0 2.223.541 2.223 1.625v9.75c0 1.084-1.273 1.625-2.223 1.625"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
               <button id="massa-calcular-btn" class="btn primary" style="align-self:flex-start">Calcular</button>
               <div id="massa-resultado" class="note" style="display:none"></div>
             </div>
@@ -2999,7 +3042,59 @@
             Voltar para escolher outro tópico
           </button>
         </div>
-      </article>    </section>
+      </article>
+      <article id="about" class="section">
+        <div style="margin-bottom:24px">
+          <h2>Sobre</h2>
+        </div>
+        <div class="card" style="max-width:900px; margin:0 auto; line-height:1.8; font-size:1.05rem">
+          <p style="margin-bottom:20px">
+            Somos <strong>Natanael</strong> e <strong>Gabriela Sales Marinho</strong>, estudantes do 3º ano do curso Técnico em Informática do Instituto Federal do Tocantins – Campus Paraíso. Este site foi criado como requisito para avaliação da disciplina de Química.
+          </p>
+          
+          <p style="margin-bottom:20px">
+            Durante o 4° bimestre do ano letivo de 2025, tivemos a oportunidade de construir esse projeto que marcou profundamente a nossa formação. Como autores, pudemos perceber o quanto cada etapa contribuiu para ampliar nossos conhecimentos, reforçar nossa autonomia e aprofundar nossa compreensão sobre a área da informática e química. Transformar ideias em algo concreto não foi apenas um desafio técnico, mas também um processo de descobertas, superação e amadurecimento pessoal.
+          </p>
+          
+          <p style="margin-bottom:20px">
+            Ao desenvolver este trabalho, aprendemos que a tecnologia vai muito além de códigos e estruturas; ela envolve criatividade, responsabilidade e sensibilidade para resolver problemas reais. Aqui, compartilhamos os resultados desse aprendizado, que representam não só um requisito de avaliação de conhecimento, mas também uma parte essencial da nossa evolução como futuros profissionais.
+          </p>
+          
+          <p style="margin-bottom:20px">
+            Agradecemos a banca avaliadora composta pelos professores River Souza Magalhães, Lucas Arruda Ramalho e a professora Thatiane de Oliveira Rosa, pelo tempo, dedicação e contribuições valiosas para o aprimoramento deste trabalho. Queremos agradecer também a todos os colegas que acompanharam a criação do projeto.
+          </p>
+          
+          <p style="margin-bottom:20px">
+            Esperamos que este memorial e este site transmitam um pouco da dedicação, do empenho e do entusiasmo que colocamos em cada detalhe.
+          </p>
+          
+          <p>
+            Sintam-se convidados(as) a explorar, conhecer e acompanhar essa etapa tão importante da nossa jornada.
+          </p>
+          
+          <!-- Fotos dos autores -->
+          <div style="margin-top:40px; padding-top:32px; border-top:2px solid rgba(37,99,235,0.1)">
+            <h3 style="text-align:center; margin-bottom:24px; color:#1e40af; font-size:1.3rem">Autores do Projeto</h3>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:32px; align-items:start">
+              <div style="text-align:center">
+                <img src="img/WhatsApp Image 2025-10-31 at 09.24.36.jpeg" alt="Natanael" 
+                     style="max-width:100%; max-height:400px; width:auto; height:auto; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); object-fit:contain; display:block; margin:0 auto 16px auto; cursor:pointer"
+                     onclick="openImageZoom(this.src)">
+                <p style="font-weight:600; color:#1e40af; font-size:1.1rem; margin:0">Natanael</p>
+                <p style="color:#64748b; font-size:0.95rem; margin:4px 0 0 0">Co-autor</p>
+              </div>
+              <div style="text-align:center">
+                <img src="img/WhatsApp Image 2025-12-07 at 14.31.11.jpeg" alt="Gabriela Sales Marinho" 
+                     style="max-width:100%; max-height:400px; width:auto; height:auto; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); object-fit:contain; display:block; margin:0 auto 16px auto; cursor:pointer"
+                     onclick="openImageZoom(this.src)">
+                <p style="font-weight:600; color:#1e40af; font-size:1.1rem; margin:0">Gabriela Sales Marinho</p>
+                <p style="color:#64748b; font-size:0.95rem; margin:4px 0 0 0">Co-autora</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
     <aside class="sidebar">
       <div class="quiz-panel" id="sidebar-quiz">
         <h3>Quiz rápido</h3>
@@ -3042,23 +3137,23 @@
       <div style="display:flex; flex-direction:column; gap:6px">
         <textarea id="ai-chat-input" rows="2" placeholder="Digite sua dúvida..." style="resize:none; border-radius:10px; border:1px solid var(--border); padding:8px 10px; font-family:inherit; font-size:0.9rem"></textarea>
         <button id="ai-chat-send" class="btn primary" style="width:100%; padding:10px 0; font-size:0.9rem">Enviar para a IA</button>
-        <div id="ai-chat-hint" style="font-size:0.75rem; color:#94a3b8">Obs.: é necessário configurar o backend de IA para respostas reais. Por enquanto, uma resposta simulada é exibida.</div>
+        <div id="ai-chat-hint" style="font-size:0.75rem; color:#94a3b8">Erro ao processar a solicitação. Tente novamente mais tarde.</div>
       </div>
     </div>
   </div>
 
   <!-- Botão flutuante para abrir o chat da IA -->
-  <button id="ai-chat-toggle" class="btn primary" style="position:fixed; right:24px; bottom:24px; z-index:9998; border-radius:999px; padding:10px 18px; display:flex; align-items:center; gap:8px; font-size:0.9rem">
-    <span style="display:flex; align-items:center; justify-content:center;">
+  <button id="ai-chat-toggle" class="btn primary" style="position:fixed; right:24px; bottom:24px; z-index:9998; border-radius:999px; padding:10px 18px; display:flex; align-items:center; gap:8px; font-size:0.9rem; white-space:nowrap; flex-shrink:0">
+    <span style="display:flex; align-items:center; justify-content:center; flex-shrink:0;">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" style="width:18px; height:18px; fill:white;">
         <path d="M14.217,19.707l-1.112,2.547c-0.427,0.979-1.782,0.979-2.21,0l-1.112-2.547c-0.99-2.267-2.771-4.071-4.993-5.057	L1.73,13.292c-0.973-0.432-0.973-1.848,0-2.28l2.965-1.316C6.974,8.684,8.787,6.813,9.76,4.47l1.126-2.714	c0.418-1.007,1.81-1.007,2.228,0L14.24,4.47c0.973,2.344,2.786,4.215,5.065,5.226l2.965,1.316c0.973,0.432,0.973,1.848,0,2.28	l-3.061,1.359C16.988,15.637,15.206,17.441,14.217,19.707z"></path>
         <path d="M24.481,27.796l-0.339,0.777c-0.248,0.569-1.036,0.569-1.284,0l-0.339-0.777c-0.604-1.385-1.693-2.488-3.051-3.092	l-1.044-0.464c-0.565-0.251-0.565-1.072,0-1.323l0.986-0.438c1.393-0.619,2.501-1.763,3.095-3.195l0.348-0.84	c0.243-0.585,1.052-0.585,1.294,0l0.348,0.84c0.594,1.432,1.702,2.576,3.095,3.195l0.986,0.438c0.565,0.251,0.565,1.072,0,1.323	l-1.044,0.464C26.174,25.308,25.085,26.411,24.481,27.796z"></path>
       </svg>
     </span>
-    <span style="font-weight:600">Ajuda</span>
+    <span style="font-weight:600; flex-shrink:0">Ajuda</span>
   </button>
 
-  <footer>&copy; 2025 Blog Química Orgânica — Feito por Natanael</footer>
+  <footer>&copy; 2025 Blog Química Orgânica — Feito por Natanael e Gabi</footer>
   <!-- Firebase SDK (v8 - compatível com uso simples via scripts) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>

@@ -218,10 +218,10 @@ async function salvarProgressoAluno() {
   }
 }
 
+// Função carregarProgressoAluno removida - Firebase não está mais em uso
 async function carregarProgressoAluno() {
-  if (!window.firebaseDb || !window.firebaseAuth || !window.firebaseAuth.currentUser) {
-    return false;
-  }
+  // Firebase removido - função mantida apenas para compatibilidade
+  return false;
   
   const user = window.firebaseAuth.currentUser;
   try {
@@ -849,8 +849,49 @@ function parseFormulaAdvanced(formula) {
   return result;
 }
 
+// Função para formatar elementos químicos (primeira letra maiúscula, segunda minúscula)
+function formatChemicalElements(formula) {
+  // Formata elementos químicos: primeira letra maiúscula, segunda minúscula (se houver)
+  // Ex: H -> H, CA -> Ca, FE -> Fe, H2O -> H2O (já correto), CA(OH)2 -> Ca(OH)2
+  return formula.replace(/([A-Z][a-z]?|[A-Z]{2,})/g, (match, p1, offset, string) => {
+    // Se já está no formato correto (primeira maiúscula, segunda minúscula ou só uma letra), mantém
+    if (match.length === 1 || (match.length === 2 && match[1] === match[1].toLowerCase())) {
+      return match;
+    }
+    // Se tem duas ou mais letras maiúsculas, converte a segunda para minúscula
+    if (match.length >= 2) {
+      return match[0] + match.substring(1).toLowerCase();
+    }
+    return match;
+  });
+}
+
+// Função para converter números em subscritos e formatar elementos
+function formatFormulaWithSubscripts(formula) {
+  // Primeiro formata os elementos químicos (primeira maiúscula, segunda minúscula)
+  let formatted = formatChemicalElements(formula);
+  // Depois converte números em subscritos (H2O -> H₂O)
+  formatted = formatted.replace(/(\d+)/g, (match) => {
+    const subscripts = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
+    return match.split('').map(digit => subscripts[parseInt(digit)]).join('');
+  });
+  return formatted;
+}
+
+// Função para converter fórmula com subscritos de volta para números (para processamento)
+function parseFormulaWithSubscripts(formula) {
+  const subscripts = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
+  let result = formula;
+  subscripts.forEach((sub, index) => {
+    result = result.replace(new RegExp(sub, 'g'), index.toString());
+  });
+  return result;
+}
+
 function calculateMolecularMass(formula) {
-  const counts = parseFormulaAdvanced(formula);
+  // Remove subscritos visuais antes de processar
+  const cleanFormula = parseFormulaWithSubscripts(formula);
+  const counts = parseFormulaAdvanced(cleanFormula);
   if (!counts) {
     return { 
       ok: false, 
@@ -889,7 +930,8 @@ function calculateMolecularMass(formula) {
     ok: true, 
     value: mass,
     steps: steps,
-    formula: formula,
+    formula: cleanFormula, // Mantém a fórmula original para processamento
+    formulaDisplay: formatFormulaWithSubscripts(cleanFormula), // Fórmula formatada para exibição
     counts: counts
   };
 }
@@ -939,12 +981,9 @@ async function sendAIMessage(rawQuestion, context) {
     // const data = await resp.json();
     // const answer = data.resposta;
 
-    const answer =
-      'Resposta simulada da IA. Aqui você pode configurar um backend (por exemplo, Firebase Functions + API de IA) ' +
-      'para gerar explicações passo a passo com base na pergunta do aluno e na questão do quiz.';
-    appendAIMessage('ia', answer);
+    appendAIMessage('ia', 'Erro ao processar a solicitação. Tente novamente mais tarde.');
   } catch (e) {
-    appendAIMessage('ia', 'Ocorreu um erro ao contactar o serviço de IA. Verifique a configuração do backend.');
+    appendAIMessage('ia', 'Erro ao processar a solicitação. Tente novamente mais tarde.');
   }
 }
 
@@ -999,14 +1038,14 @@ function initToolsAndAI() {
       } else {
         // Monta o resultado detalhado com cálculo passo a passo
         let html = `<div style="margin-bottom:12px">`;
-        html += `<strong style="font-size:1.1rem; color:#1e40af">Fórmula:</strong> <code style="background:rgba(37,99,235,0.1); padding:4px 8px; border-radius:6px; font-size:1.05rem">${result.formula}</code>`;
+        html += `<strong style="font-size:1.1rem; color:#1e40af">Fórmula:</strong> <code style="background:rgba(37,99,235,0.1); padding:4px 8px; border-radius:6px; font-size:1.05rem">${result.formulaDisplay || formatFormulaWithSubscripts(result.formula)}</code>`;
         html += `</div>`;
         
         html += `<div style="margin-bottom:12px; padding:12px; background:rgba(16,185,129,0.05); border-radius:10px; border-left:3px solid #10b981">`;
         html += `<strong style="color:#047857; display:block; margin-bottom:8px">Cálculo passo a passo:</strong>`;
         
         result.steps.forEach((step, idx) => {
-          const formulaPart = step.count > 1 ? `${step.element}<sub>${step.count}</sub>` : step.element;
+          const formulaPart = step.count > 1 ? `${step.element}${formatFormulaWithSubscripts(step.count.toString())}` : step.element;
           html += `<div style="margin:6px 0; font-size:0.95rem; color:#064a6b">`;
           html += `${formulaPart}: ${step.count} × ${step.atomicMass.toFixed(2)} g/mol = <strong>${step.contribution.toFixed(2)} g/mol</strong>`;
           html += `</div>`;
@@ -1042,6 +1081,122 @@ function initToolsAndAI() {
           massaBtn.click();
         }
       });
+      
+      // Mostra subscritos e formata elementos dentro do input usando overlay
+      const displayElement = document.getElementById('massa-formula-display');
+      if (displayElement) {
+        const updateDisplay = () => {
+          const value = massaInput.value;
+          if (value && value.length > 0) {
+            // Formata elementos químicos e subscritos para exibição
+            const formatted = formatFormulaWithSubscripts(value);
+            displayElement.textContent = formatted;
+            displayElement.style.display = 'flex';
+          } else {
+            displayElement.textContent = '';
+            displayElement.style.display = 'none';
+          }
+        };
+        
+        // Atualiza o valor do input para formatar elementos químicos automaticamente
+        const updateInputValue = () => {
+          const value = massaInput.value;
+          if (value && value.length > 0) {
+            // Formata elementos químicos no valor do input (primeira maiúscula, segunda minúscula)
+            const formattedElements = formatChemicalElements(value);
+            if (formattedElements !== value) {
+              const cursorPos = massaInput.selectionStart;
+              const diff = formattedElements.length - value.length;
+              massaInput.value = formattedElements;
+              // Ajusta posição do cursor
+              const newCursorPos = Math.max(0, Math.min(cursorPos + diff, formattedElements.length));
+              massaInput.setSelectionRange(newCursorPos, newCursorPos);
+            }
+          }
+        };
+        
+        massaInput.addEventListener('input', () => {
+          updateInputValue();
+          updateDisplay();
+        });
+        massaInput.addEventListener('keyup', updateDisplay);
+        massaInput.addEventListener('paste', () => {
+          setTimeout(() => {
+            updateInputValue();
+            updateDisplay();
+          }, 10);
+        });
+        
+        // Sincroniza o cursor visualmente
+        massaInput.addEventListener('keydown', (e) => {
+          setTimeout(() => {
+            const cursorPos = massaInput.selectionStart;
+            // Ajusta a posição do texto formatado para alinhar com o cursor
+            if (cursorPos > 0) {
+              const beforeCursor = formatFormulaWithSubscripts(massaInput.value.substring(0, cursorPos));
+              // Cria um span temporário para medir a largura
+              const measure = document.createElement('span');
+              measure.style.visibility = 'hidden';
+              measure.style.position = 'absolute';
+              measure.style.fontSize = getComputedStyle(massaInput).fontSize;
+              measure.style.fontFamily = getComputedStyle(massaInput).fontFamily;
+              measure.textContent = beforeCursor;
+              document.body.appendChild(measure);
+              const width = measure.offsetWidth;
+              document.body.removeChild(measure);
+              // Ajusta o scroll se necessário
+              if (displayElement.scrollWidth > displayElement.clientWidth) {
+                displayElement.scrollLeft = Math.max(0, width - displayElement.clientWidth + 20);
+              }
+            }
+          }, 0);
+        });
+      }
+      
+      // Teclado virtual
+      const keyboardToggle = document.getElementById('massa-keyboard-toggle');
+      const keyboard = document.getElementById('massa-keyboard');
+      
+      if (keyboardToggle && keyboard) {
+        keyboardToggle.addEventListener('click', () => {
+          if (keyboard.classList.contains('keyboard-open')) {
+            // Fechar com animação
+            keyboard.classList.remove('keyboard-open', 'keyboard-opening');
+            keyboard.classList.add('keyboard-closing');
+            setTimeout(() => {
+              keyboard.style.display = 'none';
+              keyboard.classList.remove('keyboard-closing');
+            }, 300);
+          } else {
+            // Abrir com animação
+            keyboard.style.display = 'block';
+            keyboard.classList.remove('keyboard-closing');
+            // Força reflow para garantir que a animação funcione
+            keyboard.offsetHeight;
+            keyboard.classList.add('keyboard-opening');
+            setTimeout(() => {
+              keyboard.classList.remove('keyboard-opening');
+              keyboard.classList.add('keyboard-open');
+            }, 400);
+            massaInput.focus();
+          }
+        });
+        
+        // Botões do teclado
+        const keyboardBtns = keyboard.querySelectorAll('.keyboard-btn[data-char]');
+        keyboardBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const char = btn.getAttribute('data-char');
+            const cursorPos = massaInput.selectionStart;
+            const value = massaInput.value;
+            const newValue = value.substring(0, cursorPos) + char + value.substring(cursorPos);
+            massaInput.value = newValue;
+            massaInput.setSelectionRange(cursorPos + char.length, cursorPos + char.length);
+            massaInput.dispatchEvent(new Event('input'));
+            massaInput.focus();
+          });
+        });
+      }
     }
   }
 
@@ -1111,170 +1266,50 @@ function initToolsAndAI() {
 // Exporta para uso global em botões inline
 window.openAIChatFromQuestion = openAIChatFromQuestion;
 
-// ----------------------
-// Autenticação do aluno + perfil + registro de eventos
-// ----------------------
-
-let currentAluno = null;
-
-function logEvento(tipo, detalhe) {
-  if (!window.firebaseDb || !window.firebaseAuth) return;
-  const user = window.firebaseAuth.currentUser;
-  if (!user) return;
-  try {
-    window.firebaseDb.collection('eventos').add({
-      uid: user.uid,
-      email: user.email || null,
-      tipo,
-      detalhe,
-      pagina: window.location.pathname,
-      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch (e) {
-    // silencioso para não atrapalhar o aluno
-    console.warn('Falha ao registrar evento:', e);
+// Função para fechar o teclado de massa molecular
+function closeMassaKeyboard() {
+  const keyboard = document.getElementById('massa-keyboard');
+  if (keyboard) {
+    keyboard.classList.remove('keyboard-open', 'keyboard-opening');
+    keyboard.classList.add('keyboard-closing');
+    setTimeout(() => {
+      keyboard.style.display = 'none';
+      keyboard.classList.remove('keyboard-closing');
+    }, 300);
   }
+}
+
+// Função para deletar último caractere
+function deleteLastChar() {
+  const massaInput = document.getElementById('massa-formula-input');
+  if (massaInput) {
+    const cursorPos = massaInput.selectionStart;
+    if (cursorPos > 0) {
+      const value = massaInput.value;
+      const newValue = value.substring(0, cursorPos - 1) + value.substring(cursorPos);
+      massaInput.value = newValue;
+      massaInput.setSelectionRange(cursorPos - 1, cursorPos - 1);
+      massaInput.dispatchEvent(new Event('input'));
+      massaInput.focus();
+    }
+  }
+}
+
+// ----------------------
+// Função logEvento removida - Firebase não está mais em uso
+// ----------------------
+
+// Função logEvento vazia para manter compatibilidade com código existente
+function logEvento(tipo, detalhe) {
+  // Firebase removido - função mantida apenas para compatibilidade
+  return;
 }
 
 // Disponibiliza globalmente para uso em onclick inline
 window.logEvento = logEvento;
 
-async function carregarPerfilAluno(user) {
-  if (!window.firebaseDb || !user) return;
-  try {
-    const docRef = window.firebaseDb.collection('alunos').doc(user.uid);
-    const snap = await docRef.get();
-    if (snap.exists) {
-      return snap.data();
-    }
-  } catch (e) {
-    console.warn('Erro ao carregar perfil do aluno:', e);
-  }
-  return null;
-}
-
-async function salvarPerfilAluno(nome, turma) {
-  if (!window.firebaseDb || !window.firebaseAuth || !window.firebaseAuth.currentUser) return;
-  const user = window.firebaseAuth.currentUser;
-  try {
-    const docRef = window.firebaseDb.collection('alunos').doc(user.uid);
-    await docRef.set(
-      {
-        uid: user.uid,
-        email: user.email || null,
-        nome: nome || user.displayName || '',
-        turma: turma || '',
-        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-      },
-      { merge: true }
-    );
-    const msg = document.getElementById('aluno-perfil-msg');
-    if (msg) {
-      msg.style.display = 'block';
-      setTimeout(() => (msg.style.display = 'none'), 3000);
-    }
-    logEvento('perfil_salvo', `Nome=${nome}; Turma=${turma}`);
-  } catch (e) {
-    alert('Erro ao salvar perfil. Verifique sua conexão e tente novamente.');
-    console.error(e);
-  }
-}
-
-function atualizarUIAluno(user, perfil) {
-  const statusEl = document.getElementById('aluno-status');
-  const googleBtnText = document.getElementById('aluno-google-btn-text');
-  const perfilBox = document.getElementById('aluno-perfil');
-  const nomeSpan = document.getElementById('aluno-display-name');
-  const emailSpan = document.getElementById('aluno-display-email');
-  const nomeInput = document.getElementById('aluno-nome-input');
-  const turmaInput = document.getElementById('aluno-turma-input');
-
-  if (!statusEl) return;
-
-  if (user) {
-    const nome = (perfil && perfil.nome) || user.displayName || '(sem nome)';
-    const turma = (perfil && perfil.turma) || '';
-
-    statusEl.textContent = 'Você está conectado. Seus dados podem ser salvos no perfil abaixo.';
-    if (googleBtnText) googleBtnText.textContent = 'Conectado com Google';
-    if (perfilBox) perfilBox.style.display = 'block';
-    if (nomeSpan) nomeSpan.textContent = nome;
-    if (emailSpan) emailSpan.textContent = user.email || '';
-    if (nomeInput) nomeInput.value = nome !== '(sem nome)' ? nome : '';
-    if (turmaInput) turmaInput.value = turma;
-  } else {
-    statusEl.textContent = 'Você ainda não está conectado.';
-    if (googleBtnText) googleBtnText.textContent = 'Entrar com Google';
-    if (perfilBox) perfilBox.style.display = 'none';
-  }
-}
-
-function initAlunoAuth() {
-  const googleBtn = document.getElementById('aluno-google-btn');
-  const salvarPerfilBtn = document.getElementById('aluno-salvar-perfil');
-  const logoutBtn = document.getElementById('aluno-logout-btn');
-
-  if (googleBtn && window.firebaseAuth && window.firebase) {
-    googleBtn.addEventListener('click', () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      window.firebaseAuth
-        .signInWithPopup(provider)
-        .then((result) => {
-          const user = result.user;
-          logEvento('login', 'aluno_google_popup');
-          return carregarPerfilAluno(user).then(async (perfil) => {
-            currentAluno = user;
-            atualizarUIAluno(user, perfil);
-            // Carrega o progresso do aluno do Firestore
-            await carregarProgressoAluno();
-          });
-        })
-        .catch((err) => {
-          console.error(err);
-          alert('Não foi possível fazer login com Google. Verifique o console para mais detalhes.');
-        });
-    });
-  }
-
-  if (salvarPerfilBtn) {
-    salvarPerfilBtn.addEventListener('click', () => {
-      if (!window.firebaseAuth || !window.firebaseAuth.currentUser) {
-        alert('Você precisa estar logado com Google para salvar o perfil.');
-        return;
-      }
-      const nome = document.getElementById('aluno-nome-input')?.value || '';
-      const turma = document.getElementById('aluno-turma-input')?.value || '';
-      salvarPerfilAluno(nome, turma);
-    });
-  }
-
-  if (logoutBtn && window.firebaseAuth) {
-    logoutBtn.addEventListener('click', () => {
-      window.firebaseAuth
-        .signOut()
-        .then(() => {
-          currentAluno = null;
-          atualizarUIAluno(null, null);
-        })
-        .catch((err) => console.error(err));
-    });
-  }
-
-  if (window.firebaseAuth) {
-    window.firebaseAuth.onAuthStateChanged(async (user) => {
-      currentAluno = user;
-      if (user) {
-        const perfil = await carregarPerfilAluno(user);
-        atualizarUIAluno(user, perfil);
-        // Carrega o progresso do aluno do Firestore
-        await carregarProgressoAluno();
-        logEvento('acesso_pagina', 'index_auth');
-      } else {
-        atualizarUIAluno(null, null);
-      }
-    });
-  }
-}
+// Funções de autenticação do aluno removidas - Firebase não está mais em uso
+// O perfil do aluno foi removido da interface, mantendo apenas as calculadoras
 async function updateProgress(){
   // Atualiza também as estatísticas dos tópicos
   await updateQuizTopicStats();
@@ -1606,7 +1641,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initTabs();
   initToolsAndAI();
-  initAlunoAuth();
+  // initAlunoAuth(); // Removido - Firebase não está mais em uso
   updateProgress();
   // Atualiza as estatísticas de progresso dos quizzes
   setTimeout(() => {
