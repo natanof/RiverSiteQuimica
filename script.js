@@ -219,28 +219,53 @@ async function getCombinedQuestions(topic) {
 // Funções para salvar/carregar progresso dos alunos no Firestore
 async function salvarProgressoAluno() {
   if (!window.firebaseDb || !window.firebaseAuth || !window.firebaseAuth.currentUser) {
+    console.warn('Não é possível salvar progresso: usuário não autenticado ou Firestore não disponível');
     return false;
   }
   
   const user = window.firebaseAuth.currentUser;
   try {
     const docRef = window.firebaseDb.collection('progresso_alunos').doc(user.uid);
-    await docRef.set({
+    
+    // Calcula status de conclusão baseado nas respostas
+    const completed = {};
+    for (const topic of quizOrder) {
+      const questions = await getCombinedQuestions(topic);
+      completed[topic] = (state.userAnswers[topic]?.length || 0) >= questions.length;
+    }
+    state.completed = completed;
+    
+    // Prepara os dados para salvar (garante que todos os tópicos estejam presentes)
+    const progressoParaSalvar = {
       uid: user.uid,
       email: user.email || null,
-      userAnswers: state.userAnswers,
-      completed: state.completed,
-      atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+      displayName: user.displayName || null,
+      userAnswers: {
+        alcanos: Array.isArray(state.userAnswers.alcanos) ? state.userAnswers.alcanos : [],
+        alcenos: Array.isArray(state.userAnswers.alcenos) ? state.userAnswers.alcenos : [],
+        alcinos: Array.isArray(state.userAnswers.alcinos) ? state.userAnswers.alcinos : [],
+        oxigenados: Array.isArray(state.userAnswers.oxigenados) ? state.userAnswers.oxigenados : []
+      },
+      completed: completed,
+      atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+      ultimoAcesso: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    await docRef.set(progressoParaSalvar, { merge: true });
+    
+    const totalRespostas = Object.values(progressoParaSalvar.userAnswers).reduce((sum, arr) => sum + arr.length, 0);
+    console.log('💾 Progresso salvo no Firestore:', `${totalRespostas} respostas sincronizadas`);
+    
     return true;
   } catch (error) {
-    console.error('Erro ao salvar progresso do aluno:', error);
+    console.error('❌ Erro ao salvar progresso do aluno:', error);
     return false;
   }
 }
 
 async function carregarProgressoAluno() {
   if (!window.firebaseDb || !window.firebaseAuth || !window.firebaseAuth.currentUser) {
+    console.warn('Não é possível carregar progresso: usuário não autenticado ou Firestore não disponível');
     return false;
   }
   
@@ -251,20 +276,134 @@ async function carregarProgressoAluno() {
     
     if (doc.exists) {
       const data = doc.data();
+      
+      // Carrega as respostas dos quizzes (sincroniza do Firestore)
       if (data.userAnswers) {
-        state.userAnswers = data.userAnswers;
+        // Garante que todos os tópicos existam e mescla com dados existentes se necessário
+        state.userAnswers = {
+          alcanos: Array.isArray(data.userAnswers.alcanos) ? data.userAnswers.alcanos : [],
+          alcenos: Array.isArray(data.userAnswers.alcenos) ? data.userAnswers.alcenos : [],
+          alcinos: Array.isArray(data.userAnswers.alcinos) ? data.userAnswers.alcinos : [],
+          oxigenados: Array.isArray(data.userAnswers.oxigenados) ? data.userAnswers.oxigenados : []
+        };
+      } else {
+        // Se não houver userAnswers, inicializa vazio
+        state.userAnswers = { alcanos: [], alcenos: [], alcinos: [], oxigenados: [] };
       }
+      
+      // Carrega o status de conclusão
       if (data.completed) {
-        state.completed = data.completed;
+        state.completed = {
+          alcanos: data.completed.alcanos === true,
+          alcenos: data.completed.alcenos === true,
+          alcinos: data.completed.alcinos === true,
+          oxigenados: data.completed.oxigenados === true
+        };
+      } else {
+        // Calcula completed baseado nas respostas
+        for (const topic of quizOrder) {
+          const questions = await getCombinedQuestions(topic);
+          state.completed[topic] = state.userAnswers[topic].length >= questions.length;
+        }
       }
+      
+      // Atualiza timestamp de último acesso
+      await docRef.update({
+        ultimoAcesso: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      const totalRespostas = Object.values(state.userAnswers).reduce((sum, arr) => sum + arr.length, 0);
+      const totalCompletos = Object.values(state.completed).filter(v => v).length;
+      
+      console.log('✅ Progresso sincronizado do Firestore:', {
+        respostas: Object.keys(state.userAnswers).map(t => `${t}: ${state.userAnswers[t].length} respostas`),
+        completos: Object.entries(state.completed).filter(([_, v]) => v).map(([k]) => k),
+        total: `${totalRespostas} respostas, ${totalCompletos} quizzes completos`
+      });
+      
+      // Mostra notificação discreta de sincronização (opcional)
+      if (totalRespostas > 0) {
+        mostrarNotificacaoSincronizacao(totalRespostas, totalCompletos);
+      }
+      
+      // Atualiza a UI com o progresso carregado
       updateProgress();
+      
+      // Recarrega o quiz atual se estiver visível
+      const activeSection = document.querySelector('.section.active');
+      if (activeSection && activeSection.id === 'quizgeral') {
+        await mountGeneralQuiz();
+      } else {
+        const currentTopic = state.currentTopic;
+        if (currentTopic) {
+          const sidebarQuiz = document.getElementById('sidebar-quiz');
+          if (sidebarQuiz) {
+            await mountQuizToContainer(currentTopic, 'sidebar-quiz');
+          }
+        }
+      }
+      
+      return true;
+    } else {
+      console.log('📝 Nenhum progresso encontrado. Iniciando novo progresso.');
+      // Inicializa progresso vazio se não existir
+      state.userAnswers = { alcanos: [], alcenos: [], alcinos: [], oxigenados: [] };
+      state.completed = { alcanos: false, alcenos: false, alcinos: false, oxigenados: false };
+      await salvarProgressoAluno();
       return true;
     }
-    return false;
   } catch (error) {
-    console.error('Erro ao carregar progresso do aluno:', error);
+    console.error('❌ Erro ao carregar progresso do aluno:', error);
     return false;
   }
+}
+
+// Função para mostrar notificação discreta de sincronização
+function mostrarNotificacaoSincronizacao(totalRespostas, totalCompletos) {
+  // Remove notificação anterior se existir
+  const notifAnterior = document.getElementById('sync-notification');
+  if (notifAnterior) {
+    notifAnterior.remove();
+  }
+  
+  const notif = document.createElement('div');
+  notif.id = 'sync-notification';
+  notif.style.cssText = `
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    animation: slideInRight 0.3s ease-out;
+    max-width: 300px;
+  `;
+  
+  notif.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
+      <path d="M20 6L9 17l-5-5"/>
+    </svg>
+    <div>
+      <div style="font-weight:600">Progresso sincronizado</div>
+      <div style="font-size:0.85rem; opacity:0.9">${totalRespostas} respostas • ${totalCompletos} completos</div>
+    </div>
+  `;
+  
+  document.body.appendChild(notif);
+  
+  // Remove após 3 segundos
+  setTimeout(() => {
+    notif.style.animation = 'slideOutRight 0.3s ease-out';
+    setTimeout(() => notif.remove(), 300);
+  }, 3000);
 }
 
 async function getCurrentQuizForGeneral(){
@@ -710,13 +849,13 @@ function showSection(id){
 const startQuizBtn = document.getElementById('start-quiz');
 if (startQuizBtn) {
   startQuizBtn.addEventListener('click', async () => {
-    const activeSection = document.querySelector('.section.active');
-    if (activeSection && activeSection.id === 'quizgeral') {
-      await mountGeneralQuiz();
-      const qEl = document.getElementById('quiz-geral-container');
-      if(qEl) qEl.scrollIntoView({behavior:'smooth', block:'center'});
-    }
-  });
+  const activeSection = document.querySelector('.section.active');
+  if (activeSection && activeSection.id === 'quizgeral') {
+    await mountGeneralQuiz();
+    const qEl = document.getElementById('quiz-geral-container');
+    if(qEl) qEl.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+});
 }
 async function resetAllQuizzes(){
   if(!confirm('Deseja reiniciar todos os quizzes? Isso apagará seu progresso atual no quiz.')) return;
@@ -1672,12 +1811,35 @@ function initAlunoAuth() {
       // Verifica se o aluno tem perfil completo
       await verificarECompletarPerfil(user);
       
-      // Carrega o progresso do aluno
+      // Carrega o progresso do aluno do Firestore (sincroniza entre dispositivos)
+      // Isso garante que o progresso seja carregado em qualquer dispositivo
       await carregarProgressoAluno();
+      
+      // Atualiza a UI após carregar o progresso
+      updateProgress();
     } else {
-      // Usuário não logado
+      // Usuário não logado - limpa o estado local mas mantém no Firestore
       if (loginBtn) loginBtn.style.display = 'flex';
       if (userInfo) userInfo.style.display = 'none';
+      
+      // Limpa o estado local (mas o progresso permanece no Firestore)
+      state.userAnswers = { alcanos: [], alcenos: [], alcinos: [], oxigenados: [] };
+      state.completed = { alcanos: false, alcenos: false, alcinos: false, oxigenados: false };
+      updateProgress();
+      
+      // Se estiver vendo um quiz, mostra a tela de login
+      const activeSection = document.querySelector('.section.active');
+      if (activeSection && activeSection.id === 'quizgeral') {
+        await mountGeneralQuiz();
+      } else {
+        const currentTopic = state.currentTopic;
+        if (currentTopic) {
+          const sidebarQuiz = document.getElementById('sidebar-quiz');
+          if (sidebarQuiz) {
+            await mountQuizToContainer(currentTopic, 'sidebar-quiz');
+          }
+        }
+      }
     }
   });
 
@@ -1697,8 +1859,15 @@ function initAlunoAuth() {
           // Verifica e completa perfil se necessário
           await verificarECompletarPerfil(result.user);
           
-          // Salva o progresso após login
-          await salvarProgressoAluno();
+          // Carrega o progresso do Firestore (sincroniza entre dispositivos)
+          await carregarProgressoAluno();
+          
+          // Carrega perfil e atualiza UI
+          await carregarPerfilAluno(result.user);
+          const userName = document.getElementById('aluno-user-name');
+          if (userName) {
+            userName.textContent = result.user.displayName || result.user.email || 'Usuário';
+          }
         } catch (popupError) {
           // Se popup falhar (bloqueado ou outro erro), usa redirect
           console.log('Popup bloqueado ou falhou, usando redirect...', popupError);
@@ -1734,8 +1903,20 @@ function initAlunoAuth() {
       // Verifica e completa perfil se necessário
       await verificarECompletarPerfil(result.user);
       
-      // Salva o progresso após login
-      await salvarProgressoAluno();
+      // Carrega o progresso do Firestore (sincroniza entre dispositivos)
+      await carregarProgressoAluno();
+      
+      // Carrega perfil e atualiza UI
+      await carregarPerfilAluno(result.user);
+      const userName = document.getElementById('aluno-user-name');
+      if (userName) {
+        const perfilData = state.alunoPerfil;
+        userName.textContent = perfilData.nome || result.user.displayName || result.user.email || 'Usuário';
+      }
+      
+      if (!state.alunoPerfil.nome || !state.alunoPerfil.turma) {
+        showPerfilModal(result.user);
+      }
     }
   }).catch((error) => {
     // Erro no redirect (pode ser cancelado pelo usuário)
@@ -1767,8 +1948,34 @@ function initAlunoAuth() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
       try {
+        // Salva o progresso antes de fazer logout (garante que está sincronizado)
+        if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+          await salvarProgressoAluno();
+          console.log('💾 Progresso salvo antes do logout - pronto para sincronizar em outros dispositivos');
+        }
+        
+        // Faz logout
         await window.firebaseAuth.signOut();
-        console.log('Logout realizado');
+        console.log('👋 Logout realizado - progresso permanece salvo no Firestore e será carregado ao fazer login novamente');
+        
+        // Limpa o estado local (mas o progresso permanece no Firestore)
+        state.userAnswers = { alcanos: [], alcenos: [], alcinos: [], oxigenados: [] };
+        state.completed = { alcanos: false, alcenos: false, alcinos: false, oxigenados: false };
+        updateProgress();
+        
+        // Recarrega os quizzes para mostrar tela de login
+        const activeSection = document.querySelector('.section.active');
+        if (activeSection && activeSection.id === 'quizgeral') {
+          await mountGeneralQuiz();
+        } else {
+          const currentTopic = state.currentTopic;
+          if (currentTopic) {
+            const sidebarQuiz = document.getElementById('sidebar-quiz');
+            if (sidebarQuiz) {
+              await mountQuizToContainer(currentTopic, 'sidebar-quiz');
+            }
+          }
+        }
       } catch (error) {
         console.error('Erro ao fazer logout:', error);
         alert('Erro ao fazer logout. Tente novamente.');
