@@ -360,7 +360,20 @@ async function carregarProgressoAluno() {
 
 // Função para mostrar notificação discreta de sincronização
 function mostrarNotificacaoSincronizacao(totalRespostas, totalCompletos) {
-  // Remove notificação anterior se existir
+  // Verifica se a notificação já foi mostrada para este usuário
+  if (!window.firebaseAuth || !window.firebaseAuth.currentUser) {
+    return; // Não mostra se não estiver logado
+  }
+  
+  const user = window.firebaseAuth.currentUser;
+  const storageKey = `quiz_sync_notification_shown_${user.uid}`;
+  
+  // Verifica no localStorage se já foi mostrada
+  if (localStorage.getItem(storageKey) === 'true') {
+    return; // Já foi mostrada, não mostra novamente
+  }
+  
+  // Remove notificação anterior se existir (por segurança)
   const notifAnterior = document.getElementById('sync-notification');
   if (notifAnterior) {
     notifAnterior.remove();
@@ -398,6 +411,9 @@ function mostrarNotificacaoSincronizacao(totalRespostas, totalCompletos) {
   `;
   
   document.body.appendChild(notif);
+  
+  // Marca como mostrada no localStorage
+  localStorage.setItem(storageKey, 'true');
   
   // Remove após 3 segundos
   setTimeout(() => {
