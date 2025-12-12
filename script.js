@@ -1,3 +1,23 @@
+// ============================================================================
+// CONFIGURAÇÃO DE REFERÊNCIAS
+// ============================================================================
+// Configure aqui as URLs do blog e do PDF do livro para que as referências
+// nas questões funcionem corretamente.
+//
+// Exemplos:
+// - blogBaseURL: 'https://meublog.com' (deixe vazio '' para usar âncoras # na mesma página)
+// - livroPDFBaseURL: 'https://drive.google.com/viewer?url=https://exemplo.com/livro.pdf'
+//   ou 'https://exemplo.com/livro.pdf' (será usado com #page=N para ir direto à página)
+//
+// Para usar âncoras na mesma página, use blogRef como: "#alcanos", "#alcenos", etc.
+// Para usar URLs externas, use blogRef como: "https://blog.com/alcanos" ou apenas "/alcanos" (será concatenado com blogBaseURL)
+// ============================================================================
+const REFERENCIAS_CONFIG = {
+  blogBaseURL: '', // URL base do blog (deixe vazio para usar âncoras # na mesma página)
+  livroPDFURL: '', // URL do PDF do livro (URL única, sem suporte a páginas específicas)
+  livroPDFBaseURL: '' // URL base do PDF do livro (será usado com #page=N para ir direto à página)
+};
+
 const quizzes = {
   alcanos: [
     {
@@ -6,7 +26,8 @@ const quizzes = {
       answer: 1,
       explanation: "Alcanos são hidrocarbonetos saturados de cadeia aberta. Para cada n carbonos, eles apresentam 2n+2 hidrogênios (CₙH₂ₙ₊₂).",
       blogRef: "#alcanos",
-      bookRef: "Livro — capítulo de alcanos, seção fórmula geral"
+      bookRef: "Livro — capítulo de alcanos, seção fórmula geral",
+      bookPage: 1 // Página do PDF (opcional)
     },
     {
       q: "Qual sufixo usamos para nomear alcanos?",
@@ -474,26 +495,64 @@ async function submitAnswer(topic, qIndex, containerId){
   const feedback = document.createElement('div');
   feedback.className = 'note quiz-feedback';
   let html = '';
+  // Função auxiliar para gerar HTML das referências
+  const gerarReferenciasHTML = (question, topic, qIndex) => {
+    if (!question.blogRef && !question.bookRef) return '';
+    
+    let refsHTML = `<p style="margin:8px 0; font-size:0.9rem; font-weight:600; color:#1e40af">📚 Referências para estudo:</p><ul style="margin:0 0 6px 18px; padding:0; font-size:0.9rem; list-style:none">`;
+    
+    if (question.blogRef) {
+      // Se blogRef começa com #, é âncora na mesma página, senão é URL externa
+      const blogURL = question.blogRef.startsWith('#') 
+        ? question.blogRef 
+        : (question.blogRef.startsWith('http') ? question.blogRef : `${REFERENCIAS_CONFIG.blogBaseURL}${question.blogRef}`);
+      const isAncora = question.blogRef.startsWith('#');
+      
+      refsHTML += `<li style="margin-bottom:8px; display:flex; align-items:center; gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; color:#2563eb">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+        </svg>
+        <a href="${blogURL}" ${isAncora ? '' : 'target="_blank"'} style="color:#2563eb; text-decoration:none; font-weight:500" onclick="logEvento('referencia_clique', 'blog_${topic}_q${qIndex}')">Ver explicação no blog</a>
+      </li>`;
+    }
+    
+    if (question.bookRef) {
+      // Monta URL do PDF do livro
+      let livroURL = '#';
+      if (question.bookPage && REFERENCIAS_CONFIG.livroPDFBaseURL) {
+        livroURL = `${REFERENCIAS_CONFIG.livroPDFBaseURL}#page=${question.bookPage}`;
+      } else if (REFERENCIAS_CONFIG.livroPDFURL) {
+        livroURL = REFERENCIAS_CONFIG.livroPDFURL;
+      }
+      
+      refsHTML += `<li style="margin-bottom:8px; display:flex; align-items:center; gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; color:#2563eb">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+        <span style="flex:1">${question.bookRef}</span>
+        ${livroURL !== '#' ? `<a href="${livroURL}" target="_blank" style="color:#2563eb; text-decoration:none; font-weight:500; white-space:nowrap" onclick="logEvento('referencia_clique', 'livro_${topic}_q${qIndex}')">Abrir PDF</a>` : '<span style="color:#94a3b8; font-size:0.85rem">(PDF não configurado)</span>'}
+      </li>`;
+    }
+    
+    refsHTML += `</ul>`;
+    return refsHTML;
+  };
+
   if (isCorrect) {
     html += `<p style="margin:4px 0"><strong>Ótimo!</strong> Resposta correta.</p>`;
     if (question.explanation) {
       html += `<p style="margin:4px 0">${question.explanation}</p>`;
     }
+    // Mostra referências também quando acerta (para aprofundar conhecimento)
+    html += gerarReferenciasHTML(question, topic, qIndex);
   } else {
     html += `<p style="margin:4px 0"><strong>Não foi dessa vez.</strong> Reveja a ideia principal antes de tentar de novo.</p>`;
     if (question.explanation) {
       html += `<p style="margin:4px 0">${question.explanation}</p>`;
     }
-    if (question.blogRef || question.bookRef) {
-      html += `<p style="margin:6px 0; font-size:0.9rem">Quer revisar o conteúdo?</p><ul style="margin:0 0 6px 18px; padding:0; font-size:0.9rem">`;
-      if (question.blogRef) {
-        html += `<li><a href="${question.blogRef}" target="_blank" style="color:#2563eb; text-decoration:none" onclick="logEvento('referencia_clique', 'blog_${topic}_q${qIndex}')">Ver explicação no blog</a></li>`;
-      }
-      if (question.bookRef) {
-        html += `<li>${question.bookRef} <a href="#" onclick="logEvento('referencia_clique', 'livro_${topic}_q${qIndex}'); return false;" style="color:#2563eb; text-decoration:none; margin-left:6px">[Acessar]</a></li>`;
-      }
-      html += `</ul>`;
-    }
+    // Mostra referências quando erra
+    html += gerarReferenciasHTML(question, topic, qIndex);
     html += `<button class="btn ghost" style="margin-top:8px; padding:8px 12px; font-size:0.85rem" onclick="openAIChatFromQuestion('${topic}', ${qIndex}, ${selectedIndex})">Tenho dúvida / Perguntar à IA</button>`;
   }
   feedback.innerHTML = html;

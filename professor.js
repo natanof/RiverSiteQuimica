@@ -359,6 +359,11 @@ async function addProfessorQuestion() {
   ];
   const correctAnswer = document.querySelector('input[name="prof-correct-answer"]:checked');
   
+  // Campos opcionais de referências
+  const blogRef = document.getElementById('prof-blog-ref')?.value.trim() || '';
+  const bookRef = document.getElementById('prof-book-ref')?.value.trim() || '';
+  const bookPage = document.getElementById('prof-book-page')?.value.trim() || '';
+  
   if (!questionText) { 
     alert('Por favor, digite a pergunta!'); 
     return; 
@@ -379,6 +384,17 @@ async function addProfessorQuestion() {
     id: Date.now()
   };
   
+  // Adiciona referências se fornecidas
+  if (blogRef) {
+    newQuestion.blogRef = blogRef;
+  }
+  if (bookRef) {
+    newQuestion.bookRef = bookRef;
+  }
+  if (bookPage) {
+    newQuestion.bookPage = parseInt(bookPage);
+  }
+  
   const questions = await getProfessorQuestions(topic);
   questions.push(newQuestion);
   const saved = await saveProfessorQuestions(topic, questions);
@@ -398,6 +414,13 @@ function clearProfessorForm() {
   document.getElementById('prof-option-2').value = '';
   document.getElementById('prof-option-3').value = '';
   document.querySelectorAll('input[name="prof-correct-answer"]').forEach(r => r.checked = false);
+  // Limpa campos de referências
+  const blogRefInput = document.getElementById('prof-blog-ref');
+  const bookRefInput = document.getElementById('prof-book-ref');
+  const bookPageInput = document.getElementById('prof-book-page');
+  if (blogRefInput) blogRefInput.value = '';
+  if (bookRefInput) bookRefInput.value = '';
+  if (bookPageInput) bookPageInput.value = '';
 }
 
 async function loadProfessorQuestions() {
