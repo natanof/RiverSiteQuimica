@@ -3226,3 +3226,209 @@ img, svg, video {
     box-sizing: border-box !important;
   }
 }
+
+/* ============================================================================
+   MODAL DE ZOOM PARA ESTRUTURAS MOLECULARES
+   ============================================================================ */
+.molecular-zoom-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInZoom 0.3s ease-out;
+}
+
+.molecular-zoom-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.95); /* Fundo escuro como na segunda imagem */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.molecular-zoom-container {
+  position: relative;
+  width: 95%;
+  max-width: 1200px;
+  max-height: 95vh;
+  z-index: 10001;
+  display: flex;
+  flex-direction: column;
+  animation: slideUpZoom 0.4s ease-out;
+}
+
+.molecular-zoom-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10002;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.molecular-zoom-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.1);
+}
+
+.molecular-zoom-close svg {
+  width: 20px;
+  height: 20px;
+  stroke: white;
+}
+
+.molecular-zoom-content {
+  background: rgba(15, 23, 42, 0.98); /* Fundo escuro */
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-y: auto;
+  max-height: 95vh;
+}
+
+.molecular-zoom-image-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+  min-height: 400px;
+}
+
+.molecular-zoom-image-wrapper img,
+.molecular-zoom-image-wrapper svg {
+  max-width: 100%;
+  max-height: 70vh;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.molecular-zoom-image-wrapper svg {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+}
+
+.molecular-zoom-info-box {
+  background: rgba(239, 68, 68, 0.1); /* Fundo rosa claro como na segunda imagem */
+  border: 2px solid rgba(239, 68, 68, 0.3);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 20px;
+  animation: slideInInfo 0.5s ease-out;
+}
+
+.molecular-zoom-info-box h3 {
+  color: #dc2626;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.molecular-zoom-info-box ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.molecular-zoom-info-box li {
+  color: #1e40af;
+  font-size: 1rem;
+  line-height: 1.8;
+  margin-bottom: 8px;
+  padding-left: 24px;
+  position: relative;
+}
+
+.molecular-zoom-info-box li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #dc2626;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+@keyframes fadeInZoom {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUpZoom {
+  from {
+    transform: translateY(30px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInInfo {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsivo para mobile */
+@media (max-width: 768px) {
+  .molecular-zoom-container {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .molecular-zoom-content {
+    padding: 20px;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+  
+  .molecular-zoom-image-wrapper {
+    min-height: 300px;
+  }
+  
+  .molecular-zoom-info-box {
+    padding: 16px;
+  }
+  
+  .molecular-zoom-info-box h3 {
+    font-size: 1rem;
+  }
+  
+  .molecular-zoom-info-box li {
+    font-size: 0.9rem;
+  }
+}

@@ -135,8 +135,8 @@
                 </div>
               </div>
               <aside>
-                <div class="illustration" aria-hidden="true">
-                  <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Estrutura de alcanos">
+                <div class="illustration" aria-hidden="true" style="cursor:pointer" onclick="openImageZoom(null, this.querySelector('svg'), 'Características do Butano', '<ul><li><strong>Fórmula:</strong> C₄H₁₀</li><li>Todos os carbonos com ligações simples C-C</li><li>Estrutura linear ou ramificada</li><li>Apolar - Insolúvel em água</li></ul>')">
+                  <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Estrutura de alcanos" style="cursor:pointer">
                     <defs>
                       <linearGradient id="carbonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" style="stop-color:#3a7bd5;stop-opacity:1" />
@@ -908,8 +908,8 @@
                 </div>
               </div>
               <aside>
-                <div class="illustration" aria-hidden="true">
-                  <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Estrutura de alcenos">
+                <div class="illustration" aria-hidden="true" style="cursor:pointer" onclick="openImageZoom(null, this.querySelector('svg'), 'Como a Dupla Ligação Funciona:', '<ul><li>A ligação π (pi) é mais fraca que a ligação σ (sigma)</li><li>Pode ser quebrada facilmente em reações de adição</li><li>Permite adição de H₂, HX, X₂, H₂O</li></ul>')">
+                  <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Estrutura de alcenos" style="cursor:pointer">
                     <defs>
                       <linearGradient id="carbonAlcenoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" style="stop-color:#00c1ff;stop-opacity:1" />
@@ -3218,6 +3218,28 @@
     </div>
   </div>
   
+  <!-- Modal de Zoom para Estruturas Moleculares -->
+  <div id="molecular-zoom-modal" class="molecular-zoom-modal" style="display:none;">
+    <div class="molecular-zoom-backdrop" onclick="closeMolecularZoom()"></div>
+    <div class="molecular-zoom-container">
+      <button class="molecular-zoom-close" onclick="closeMolecularZoom()" aria-label="Fechar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      <div class="molecular-zoom-content">
+        <div class="molecular-zoom-image-wrapper">
+          <div id="molecular-zoom-image-container"></div>
+        </div>
+        <div id="molecular-zoom-info-box" class="molecular-zoom-info-box" style="display:none;">
+          <h3 id="molecular-zoom-info-title"></h3>
+          <div id="molecular-zoom-info-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase SDK (v8 - compatível com uso simples via scripts) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>

@@ -2003,3 +2003,85 @@ showSection = function(id) {
   setTimeout(() => initTabs(), 100);
 };
 
+// ============================================================================
+// SISTEMA DE ZOOM PARA ESTRUTURAS MOLECULARES
+// ============================================================================
+function openImageZoom(imageSrc, imageElement = null, infoTitle = null, infoContent = null) {
+  const modal = document.getElementById('molecular-zoom-modal');
+  const container = document.getElementById('molecular-zoom-image-container');
+  const infoBox = document.getElementById('molecular-zoom-info-box');
+  const infoTitleEl = document.getElementById('molecular-zoom-info-title');
+  const infoContentEl = document.getElementById('molecular-zoom-info-content');
+  
+  if (!modal || !container) return;
+  
+  // Limpa conteúdo anterior
+  container.innerHTML = '';
+  
+  // Se for um elemento SVG ou imagem, clona ele
+  if (imageElement) {
+    if (imageElement.tagName === 'SVG' || imageElement.tagName === 'svg') {
+      const clonedSvg = imageElement.cloneNode(true);
+      clonedSvg.style.width = '100%';
+      clonedSvg.style.height = 'auto';
+      clonedSvg.style.maxWidth = '100%';
+      container.appendChild(clonedSvg);
+    } else if (imageElement.tagName === 'IMG' || imageElement.tagName === 'img') {
+      const img = document.createElement('img');
+      img.src = imageSrc || imageElement.src;
+      img.alt = imageElement.alt || 'Estrutura molecular';
+      img.style.width = '100%';
+      img.style.height = 'auto';
+      img.style.maxWidth = '100%';
+      container.appendChild(img);
+    } else {
+      // Se for outro elemento, clona ele
+      const cloned = imageElement.cloneNode(true);
+      container.appendChild(cloned);
+    }
+  } else {
+    // Se não tiver elemento, cria uma imagem
+    const img = document.createElement('img');
+    img.src = imageSrc;
+    img.alt = 'Estrutura molecular';
+    img.style.width = '100%';
+    img.style.height = 'auto';
+    img.style.maxWidth = '100%';
+    container.appendChild(img);
+  }
+  
+  // Adiciona caixa de informação se fornecida
+  if (infoTitle && infoContent) {
+    infoTitleEl.textContent = infoTitle;
+    infoContentEl.innerHTML = infoContent;
+    infoBox.style.display = 'block';
+  } else {
+    infoBox.style.display = 'none';
+  }
+  
+  // Mostra o modal
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden'; // Previne scroll do body
+  
+  // Fecha com ESC
+  const handleEsc = (e) => {
+    if (e.key === 'Escape') {
+      closeMolecularZoom();
+      document.removeEventListener('keydown', handleEsc);
+    }
+  };
+  document.addEventListener('keydown', handleEsc);
+}
+
+function closeMolecularZoom() {
+  const modal = document.getElementById('molecular-zoom-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = ''; // Restaura scroll do body
+  }
+}
+
+// Torna as funções globais
+window.openImageZoom = openImageZoom;
+window.closeMolecularZoom = closeMolecularZoom;
+
