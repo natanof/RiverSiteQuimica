@@ -1793,6 +1793,9 @@ function initAlunoAuth() {
         userName.textContent = user.displayName || user.email || 'Usuário';
       }
       
+      // Atualiza o avatar do usuário
+      atualizarAvatarUsuario(user);
+      
       // Recarrega o quiz se estiver na tela de login do quiz
       const quizContainer = document.getElementById('quiz-geral-container') || 
                            document.querySelector('#sidebar-quiz')?.querySelector('div');
@@ -1868,6 +1871,9 @@ function initAlunoAuth() {
           if (userName) {
             userName.textContent = result.user.displayName || result.user.email || 'Usuário';
           }
+          
+          // Atualiza o avatar
+          atualizarAvatarUsuario(result.user);
         } catch (popupError) {
           // Se popup falhar (bloqueado ou outro erro), usa redirect
           console.log('Popup bloqueado ou falhou, usando redirect...', popupError);
@@ -1913,6 +1919,9 @@ function initAlunoAuth() {
         const perfilData = state.alunoPerfil;
         userName.textContent = perfilData.nome || result.user.displayName || result.user.email || 'Usuário';
       }
+      
+      // Atualiza o avatar
+      atualizarAvatarUsuario(result.user);
       
       if (!state.alunoPerfil.nome || !state.alunoPerfil.turma) {
         showPerfilModal(result.user);
@@ -1984,6 +1993,33 @@ function initAlunoAuth() {
   }
 }
 
+// Função para atualizar o avatar do usuário
+function atualizarAvatarUsuario(user) {
+  const avatarImg = document.getElementById('aluno-user-avatar-img');
+  const avatarIcon = document.getElementById('aluno-user-avatar-icon');
+  const avatarContainer = document.getElementById('aluno-user-avatar');
+  
+  if (!avatarContainer) return;
+  
+  // Se o usuário tem foto do Google, usa ela
+  if (user && user.photoURL) {
+    if (avatarImg) {
+      avatarImg.src = user.photoURL;
+      avatarImg.style.display = 'block';
+      avatarImg.onerror = () => {
+        // Se a imagem falhar ao carregar, mostra o ícone padrão
+        if (avatarImg) avatarImg.style.display = 'none';
+        if (avatarIcon) avatarIcon.style.display = 'block';
+      };
+    }
+    if (avatarIcon) avatarIcon.style.display = 'none';
+  } else {
+    // Se não tem foto, mostra o ícone padrão
+    if (avatarImg) avatarImg.style.display = 'none';
+    if (avatarIcon) avatarIcon.style.display = 'block';
+  }
+}
+
 // Função para verificar e completar perfil do aluno
 async function verificarECompletarPerfil(user) {
   if (!window.firebaseDb || !user) return;
@@ -2002,6 +2038,9 @@ async function verificarECompletarPerfil(user) {
         const data = doc.data();
         userName.textContent = data.nome || user.displayName || user.email || 'Usuário';
       }
+      
+      // Atualiza o avatar
+      atualizarAvatarUsuario(user);
     }
   } catch (error) {
     console.error('Erro ao verificar perfil:', error);
