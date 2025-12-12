@@ -3432,3 +3432,15 @@ img, svg, video {
     font-size: 0.9rem;
   }
 }
+
+/* Animação para destacar botão de login */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0);
+  }
+}
