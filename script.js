@@ -1465,6 +1465,24 @@ document.addEventListener('click', (e) => {
 
 // Sistema de autenticação do aluno com Google
 function initAlunoAuth() {
+  // Aguarda um pouco para garantir que o Firebase está carregado
+  if (!window.firebase || !window.firebase.auth) {
+    console.warn('Firebase não está carregado, tentando novamente...');
+    setTimeout(() => {
+      if (window.firebase && window.firebase.auth) {
+        initAlunoAuth();
+      } else {
+        console.error('Firebase Auth não está disponível. Verifique se os scripts do Firebase estão carregados.');
+        const loginBtn = document.getElementById('aluno-login-google-btn');
+        if (loginBtn) {
+          loginBtn.disabled = true;
+          loginBtn.textContent = 'Firebase não carregado';
+        }
+      }
+    }, 1000);
+    return;
+  }
+  
   if (!window.firebaseAuth) {
     console.warn('Firebase Auth não está disponível');
     return;
@@ -1502,17 +1520,53 @@ function initAlunoAuth() {
         provider.addScope('profile');
         provider.addScope('email');
         
-        const result = await window.firebaseAuth.signInWithPopup(provider);
-        console.log('Login bem-sucedido:', result.user);
-        
-        // Salva o progresso após login
-        await salvarProgressoAluno();
+        // Tenta usar popup primeiro, se falhar usa redirect (melhor para GitHub Pages)
+        try {
+          const result = await window.firebaseAuth.signInWithPopup(provider);
+          console.log('Login bem-sucedido:', result.user);
+          
+          // Salva o progresso após login
+          await salvarProgressoAluno();
+        } catch (popupError) {
+          // Se popup falhar (bloqueado ou outro erro), usa redirect
+          console.log('Popup bloqueado ou falhou, usando redirect...', popupError);
+          
+          // Verifica se é erro de popup bloqueado
+          if (popupError.code === 'auth/popup-blocked' || 
+              popupError.code === 'auth/popup-closed-by-user' ||
+              popupError.message?.includes('popup')) {
+            // Usa redirect que é mais confiável
+            await window.firebaseAuth.signInWithRedirect(provider);
+            // A página será redirecionada, então não precisa fazer mais nada aqui
+            return;
+          } else {
+            // Outro tipo de erro, tenta redirect mesmo assim
+            await window.firebaseAuth.signInWithRedirect(provider);
+            return;
+          }
+        }
       } catch (error) {
         console.error('Erro ao fazer login:', error);
-        alert('Erro ao fazer login com Google. Tente novamente.');
+        const errorMessage = error.message || 'Erro desconhecido';
+        alert(`Erro ao fazer login com Google: ${errorMessage}\n\nVerifique se:\n- O domínio está autorizado no Firebase Console\n- Os popups não estão bloqueados\n- A conexão com a internet está funcionando`);
       }
     });
   }
+  
+  // Verifica se há resultado de redirect quando a página carrega
+  window.firebaseAuth.getRedirectResult().then((result) => {
+    if (result.credential) {
+      // Login bem-sucedido via redirect
+      console.log('Login bem-sucedido via redirect:', result.user);
+      // Salva o progresso após login
+      salvarProgressoAluno();
+    }
+  }).catch((error) => {
+    // Erro no redirect (pode ser cancelado pelo usuário)
+    if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+      console.error('Erro no redirect:', error);
+    }
+  });
 
   // Botão de logout
   if (logoutBtn) {
