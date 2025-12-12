@@ -2047,18 +2047,124 @@ async function verificarECompletarPerfil(user) {
   }
 }
 
-// Função para mostrar modal de perfil
+// Função para abrir modal de edição de perfil (chamada ao clicar no avatar/nome)
+async function abrirModalEditarPerfil() {
+  if (!window.firebaseAuth || !window.firebaseAuth.currentUser) {
+    alert('Você precisa estar logado para editar o perfil.');
+    return;
+  }
+  
+  const user = window.firebaseAuth.currentUser;
+  const modal = document.getElementById('aluno-perfil-modal');
+  const nomeInput = document.getElementById('aluno-perfil-nome');
+  const turmaInput = document.getElementById('aluno-perfil-turma');
+  const errorDiv = document.getElementById('aluno-perfil-error');
+  const successDiv = document.getElementById('aluno-perfil-success');
+  const titleEl = document.getElementById('aluno-perfil-modal-title');
+  const subtitleEl = document.getElementById('aluno-perfil-modal-subtitle');
+  const modalAvatarImg = document.getElementById('aluno-perfil-modal-avatar-img');
+  const modalAvatarIcon = document.getElementById('aluno-perfil-modal-avatar-icon');
+  
+  if (!modal) return;
+  
+  // Atualiza título do modal
+  if (titleEl) titleEl.textContent = 'Editar Perfil';
+  if (subtitleEl) subtitleEl.textContent = 'Atualize suas informações';
+  
+  // Atualiza avatar no modal
+  if (user.photoURL) {
+    if (modalAvatarImg) {
+      modalAvatarImg.src = user.photoURL;
+      modalAvatarImg.style.display = 'block';
+    }
+    if (modalAvatarIcon) modalAvatarIcon.style.display = 'none';
+  } else {
+    if (modalAvatarImg) modalAvatarImg.style.display = 'none';
+    if (modalAvatarIcon) modalAvatarIcon.style.display = 'block';
+  }
+  
+  // Carrega dados atuais do perfil
+  try {
+    if (window.firebaseDb) {
+      const alunoRef = window.firebaseDb.collection('alunos').doc(user.uid);
+      const doc = await alunoRef.get();
+      
+      if (doc.exists) {
+        const data = doc.data();
+        if (nomeInput) nomeInput.value = data.nome || user.displayName || '';
+        if (turmaInput) turmaInput.value = data.turma || '';
+      } else {
+        // Se não tem perfil, preenche com dados do Google
+        if (nomeInput) nomeInput.value = user.displayName || '';
+        if (turmaInput) turmaInput.value = '';
+      }
+    } else {
+      // Fallback se Firestore não estiver disponível
+      if (nomeInput) nomeInput.value = user.displayName || '';
+      if (turmaInput) turmaInput.value = '';
+    }
+  } catch (error) {
+    console.error('Erro ao carregar perfil:', error);
+    // Preenche com dados básicos do Google
+    if (nomeInput) nomeInput.value = user.displayName || '';
+    if (turmaInput) turmaInput.value = '';
+  }
+  
+  // Limpa mensagens de erro/sucesso
+  if (errorDiv) {
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+  }
+  if (successDiv) {
+    successDiv.style.display = 'none';
+    successDiv.textContent = '';
+  }
+  
+  // Mostra o modal
+  modal.style.display = 'flex';
+  
+  // Foca no primeiro campo
+  if (nomeInput) {
+    setTimeout(() => nomeInput.focus(), 100);
+  }
+}
+
+// Função para mostrar modal de perfil (versão original para primeiro acesso)
 function mostrarModalPerfil(user) {
   const modal = document.getElementById('aluno-perfil-modal');
   const nomeInput = document.getElementById('aluno-perfil-nome');
+  const turmaInput = document.getElementById('aluno-perfil-turma');
   const errorDiv = document.getElementById('aluno-perfil-error');
+  const titleEl = document.getElementById('aluno-perfil-modal-title');
+  const subtitleEl = document.getElementById('aluno-perfil-modal-subtitle');
+  const modalAvatarImg = document.getElementById('aluno-perfil-modal-avatar-img');
+  const modalAvatarIcon = document.getElementById('aluno-perfil-modal-avatar-icon');
   
   if (modal) {
+    // Atualiza título para primeiro acesso
+    if (titleEl) titleEl.textContent = 'Complete seu Perfil';
+    if (subtitleEl) subtitleEl.textContent = 'Preencha suas informações para aparecer no painel do professor';
+    
+    // Atualiza avatar no modal
+    if (user.photoURL) {
+      if (modalAvatarImg) {
+        modalAvatarImg.src = user.photoURL;
+        modalAvatarImg.style.display = 'block';
+      }
+      if (modalAvatarIcon) modalAvatarIcon.style.display = 'none';
+    } else {
+      if (modalAvatarImg) modalAvatarImg.style.display = 'none';
+      if (modalAvatarIcon) modalAvatarIcon.style.display = 'block';
+    }
+    
     modal.style.display = 'flex';
     
     // Preenche nome com o displayName do Google se disponível
     if (nomeInput && user.displayName) {
       nomeInput.value = user.displayName;
+    }
+    if (turmaInput) {
+      turmaInput.value = '';
     }
     
     if (errorDiv) {
@@ -2070,10 +2176,24 @@ function mostrarModalPerfil(user) {
 // Função para fechar modal de perfil
 function fecharModalPerfil() {
   const modal = document.getElementById('aluno-perfil-modal');
+  const errorDiv = document.getElementById('aluno-perfil-error');
+  const successDiv = document.getElementById('aluno-perfil-success');
+  
   if (modal) {
     modal.style.display = 'none';
   }
+  
+  // Limpa mensagens
+  if (errorDiv) {
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+  }
+  if (successDiv) {
+    successDiv.style.display = 'none';
+    successDiv.textContent = '';
+  }
 }
+
 
 // Função para salvar perfil do aluno
 async function salvarPerfilAluno() {
@@ -2120,16 +2240,26 @@ async function salvarPerfilAluno() {
       userName.textContent = nome;
     }
     
-    // Fecha o modal
-    fecharModalPerfil();
+    // Atualiza estado local do perfil
+    state.alunoPerfil = {
+      nome: nome,
+      turma: turma
+    };
     
-    // Mostra mensagem de sucesso
+    // Mostra mensagem de sucesso no modal
+    const successDiv = document.getElementById('aluno-perfil-success');
+    if (successDiv) {
+      successDiv.textContent = '✅ Perfil atualizado com sucesso!';
+      successDiv.style.display = 'block';
+    }
     if (errorDiv) {
       errorDiv.style.display = 'none';
     }
     
-    // Mostra notificação de sucesso
-    alert('Perfil salvo com sucesso! Agora você aparecerá no painel do professor.');
+    // Fecha o modal após 1.5 segundos
+    setTimeout(() => {
+      fecharModalPerfil();
+    }, 1500);
     
   } catch (error) {
     console.error('Erro ao salvar perfil:', error);
@@ -2414,4 +2544,7 @@ function closeMolecularZoom() {
 // Torna as funções globais
 window.openImageZoom = openImageZoom;
 window.closeMolecularZoom = closeMolecularZoom;
+window.abrirModalEditarPerfil = abrirModalEditarPerfil;
+window.fecharModalPerfil = fecharModalPerfil;
+window.salvarPerfilAluno = salvarPerfilAluno;
 

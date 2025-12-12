@@ -30,7 +30,7 @@
     </div>
       <div class="header-logo-right" style="flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-left:auto; gap:16px">
         <div id="aluno-auth-container" style="display:flex; align-items:center; gap:12px">
-          <div id="aluno-user-info" style="display:none; align-items:center; gap:10px; padding:8px 12px; background:rgba(255,255,255,0.9); border-radius:12px; font-size:0.9rem; box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+          <div id="aluno-user-info" style="display:none; align-items:center; gap:10px; padding:8px 12px; background:rgba(255,255,255,0.9); border-radius:12px; font-size:0.9rem; box-shadow:0 2px 8px rgba(0,0,0,0.1); cursor:pointer" onclick="abrirModalEditarPerfil()" title="Clique para editar perfil">
             <div id="aluno-user-avatar" style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, #2563eb, #06b6d4); display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; border:2px solid rgba(37,99,235,0.2)">
               <img id="aluno-user-avatar-img" src="" alt="Avatar" style="width:100%; height:100%; object-fit:cover; display:none">
               <svg id="aluno-user-avatar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -39,7 +39,7 @@
               </svg>
             </div>
             <span id="aluno-user-name" style="font-weight:600; color:#1e40af; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis"></span>
-            <button id="aluno-logout-btn" class="btn ghost" style="padding:4px 8px; font-size:0.8rem; min-width:auto; flex-shrink:0">Sair</button>
+            <button id="aluno-logout-btn" class="btn ghost" style="padding:4px 8px; font-size:0.8rem; min-width:auto; flex-shrink:0" onclick="event.stopPropagation()">Sair</button>
           </div>
           <button id="aluno-login-google-btn" class="btn primary" style="display:flex; align-items:center; gap:8px; padding:10px 16px; font-size:0.9rem; white-space:nowrap">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -3178,14 +3178,28 @@
   <footer>&copy; 2025 Blog Química Orgânica — Feito por Natanael e Gabi</footer>
   
   <!-- Modal de Perfil do Aluno -->
-  <div id="aluno-perfil-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center; padding:20px">
-    <div class="card" style="max-width:500px; width:100%; padding:32px; position:relative; animation:fadeIn 0.3s ease">
+  <div id="aluno-perfil-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px)" onclick="if(event.target.id === 'aluno-perfil-modal') fecharModalPerfil()">
+    <div class="card" style="max-width:500px; width:100%; padding:32px; position:relative; animation:fadeIn 0.3s ease; max-height:90vh; overflow-y:auto" onclick="event.stopPropagation()">
+      <button onclick="fecharModalPerfil()" style="position:absolute; top:16px; right:16px; background:none; border:none; cursor:pointer; padding:8px; color:var(--muted); transition:color 0.2s; display:flex; align-items:center; justify-content:center; border-radius:8px; width:32px; height:32px" onmouseover="this.style.background='rgba(0,0,0,0.05)'; this.style.color='#1e40af'" onmouseout="this.style.background='none'; this.style.color='var(--muted)'" aria-label="Fechar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
       <div style="text-align:center; margin-bottom:24px">
-        <h3 style="margin:0 0 8px 0; color:#1e40af; font-size:1.5rem">Complete seu Perfil</h3>
-        <p style="margin:0; color:#64748b; font-size:0.95rem">Preencha suas informações para aparecer no painel do professor</p>
+        <div id="aluno-perfil-modal-avatar" style="width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg, #2563eb, #06b6d4); display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto; overflow:hidden; border:3px solid rgba(37,99,235,0.2); box-shadow:0 4px 12px rgba(0,0,0,0.1)">
+          <img id="aluno-perfil-modal-avatar-img" src="" alt="Avatar" style="width:100%; height:100%; object-fit:cover; display:none">
+          <svg id="aluno-perfil-modal-avatar-icon" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <h3 id="aluno-perfil-modal-title" style="margin:0 0 8px 0; color:#1e40af; font-size:1.5rem">Editar Perfil</h3>
+        <p id="aluno-perfil-modal-subtitle" style="margin:0; color:#64748b; font-size:0.95rem">Atualize suas informações</p>
       </div>
       
-      <form id="aluno-perfil-form" style="display:flex; flex-direction:column; gap:20px">
+      <form id="aluno-perfil-form" onsubmit="event.preventDefault(); salvarPerfilAluno()" style="display:flex; flex-direction:column; gap:20px">
         <div>
           <label style="display:flex; align-items:center; gap:8px; margin-bottom:10px; font-weight:600; color:#1e40af; font-size:0.95rem">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3218,8 +3232,18 @@
         
         <div id="aluno-perfil-error" style="display:none; padding:12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; color:#dc2626; font-size:0.9rem"></div>
         
+        <div id="aluno-perfil-success" style="display:none; padding:12px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px; color:#059669; font-size:0.9rem"></div>
+        
         <div style="display:flex; gap:12px">
-          <button type="submit" class="btn primary" style="flex:1; padding:14px 0; font-size:1rem; font-weight:600">Salvar Perfil</button>
+          <button type="submit" class="btn primary" style="flex:1; padding:14px 0; font-size:1rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Salvar Alterações
+          </button>
+          <button type="button" onclick="fecharModalPerfil()" class="btn ghost" style="padding:14px 20px; font-size:1rem; font-weight:600">Cancelar</button>
         </div>
       </form>
     </div>
