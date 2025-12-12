@@ -90,6 +90,8 @@ async function handleLogin(event) {
     
     // Carrega alunos para o select
     carregarAlunosParaSelect();
+    // Configura listeners em tempo real
+    configurarListenersTempoReal();
     
     // Atualiza último acesso
     await profRef.update({
@@ -507,7 +509,89 @@ async function carregarAlunosParaSelect() {
     });
   } catch (e) {
     console.warn('Erro ao carregar alunos:', e);
+    // Tenta sem orderBy se falhar
+    try {
+      const snap2 = await window.firebaseDb.collection('alunos').get();
+      snap2.forEach((doc) => {
+        const data = doc.data();
+        const opt = document.createElement('option');
+        opt.value = data.uid || doc.id;
+        opt.textContent = `${data.nome || '(sem nome)'} — ${data.turma || 'sem turma'}`;
+        select.appendChild(opt);
+      });
+    } catch (e2) {
+      console.error('Erro ao carregar alunos (sem orderBy):', e2);
+    }
   }
+}
+
+// Função para configurar listeners em tempo real
+function configurarListenersTempoReal() {
+  if (!window.firebaseDb) return;
+  
+  // Listener para novos alunos (atualiza o select)
+  const alunosRef = window.firebaseDb.collection('alunos');
+  alunosRef.onSnapshot((snapshot) => {
+    const select = document.getElementById('stats-aluno-select');
+    if (!select) return;
+    
+    // Mantém o valor selecionado
+    const valorSelecionado = select.value;
+    
+    // Limpa e recarrega
+    select.innerHTML = '<option value=\"\">Selecione um aluno</option>';
+    
+    // Ordena os documentos por nome no cliente
+    const alunos = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      alunos.push({
+        id: doc.id,
+        uid: data.uid || doc.id,
+        nome: data.nome || '(sem nome)',
+        turma: data.turma || 'sem turma'
+      });
+    });
+    
+    alunos.sort((a, b) => {
+      const nomeA = a.nome.toLowerCase();
+      const nomeB = b.nome.toLowerCase();
+      return nomeA.localeCompare(nomeB, 'pt-BR');
+    });
+    
+    alunos.forEach((aluno) => {
+      const opt = document.createElement('option');
+      opt.value = aluno.uid;
+      opt.textContent = `${aluno.nome} — ${aluno.turma}`;
+      select.appendChild(opt);
+    });
+    
+    // Restaura o valor selecionado se ainda existir
+    if (valorSelecionado) {
+      select.value = valorSelecionado;
+    }
+  }, (error) => {
+    console.error('Erro no listener de alunos:', error);
+  });
+  
+  // Listener para eventos (atualiza estatísticas se um aluno estiver selecionado)
+  const eventosRef = window.firebaseDb.collection('eventos');
+  let ultimaAtualizacao = Date.now();
+  
+  eventosRef.onSnapshot((snapshot) => {
+    const select = document.getElementById('stats-aluno-select');
+    if (select && select.value) {
+      // Evita atualizações muito frequentes (máximo a cada 2 segundos)
+      const agora = Date.now();
+      if (agora - ultimaAtualizacao > 2000) {
+        ultimaAtualizacao = agora;
+        // Se há um aluno selecionado, atualiza as estatísticas automaticamente
+        atualizarEstatisticasProfessor();
+      }
+    }
+  }, (error) => {
+    console.error('Erro no listener de eventos:', error);
+  });
 }
 
 // Variáveis globais para os gráficos
@@ -615,10 +699,21 @@ async function atualizarEstatisticasProfessor() {
     });
 
     // Atualiza os cards de métricas
-    document.getElementById('stats-acessos-total').textContent = acessos;
-    document.getElementById('stats-cliques-total').textContent = cliques;
-    document.getElementById('stats-quiz-total').textContent = quizResp;
-    document.getElementById('stats-ref-total').textContent = refs;
+    const acessosEl = document.getElementById('stats-acessos-total');
+    const cliquesEl = document.getElementById('stats-cliques-total');
+    const quizEl = document.getElementById('stats-quiz-total');
+    const refEl = document.getElementById('stats-ref-total');
+    
+    if (acessosEl) acessosEl.textContent = acessos;
+    if (cliquesEl) cliquesEl.textContent = cliques;
+    if (quizEl) quizEl.textContent = quizResp;
+    if (refEl) refEl.textContent = refs;
+    
+    // Garante que os resultados estão visíveis
+    if (resultadosDiv) {
+      resultadosDiv.style.display = 'grid';
+      resultadosDiv.style.opacity = '1';
+    }
 
     // Mostra/oculta seções baseado em dados
     if (snap.empty) {
@@ -629,8 +724,6 @@ async function atualizarEstatisticasProfessor() {
       if (graficosDiv) graficosDiv.style.display = 'grid';
       criarGraficos(dadosPorData, tiposEventos, dataInicio, dataFim);
     }
-    
-    if (resultadosDiv) resultadosDiv.style.opacity = '1';
 
   } catch (e) {
     console.error('Erro ao carregar estatísticas:', e);
@@ -1011,6 +1104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           currentProfessorUser = { username: savedUsername, ...doc.data() };
           updateProfessorLayout(true);
           carregarAlunosParaSelect();
+          configurarListenersTempoReal();
           return;
         }
       } catch (err) {
@@ -1028,6 +1122,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Carrega alunos para o select (mesmo sem estar logado, para quando logar)
   if (window.firebaseDb) {
     carregarAlunosParaSelect();
+    // Configura listeners em tempo real
+    configurarListenersTempoReal();
   }
 });
 
