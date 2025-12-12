@@ -521,30 +521,63 @@ async function carregarAlunosParaSelect() {
   const select = document.getElementById('stats-aluno-select');
   if (!select || !window.firebaseDb) return;
   select.innerHTML = '<option value=\"\">Selecione um aluno</option><option value=\"todos\">📊 Todos os usuários</option>';
+  
   try {
-    const snap = await window.firebaseDb.collection('alunos').orderBy('nome').get();
+    const snap = await window.firebaseDb.collection('alunos').get();
+    
+    // Usa um Map para evitar duplicatas por uid
+    const alunosUnicos = new Map();
+    
     snap.forEach((doc) => {
       const data = doc.data();
+      const uid = data.uid || doc.id;
+      
+      // Se já existe um aluno com esse uid, mantém o mais recente (com nome e turma)
+      if (!alunosUnicos.has(uid)) {
+        alunosUnicos.set(uid, {
+          uid: uid,
+          nome: data.nome || '(sem nome)',
+          turma: data.turma || 'sem turma',
+          atualizadoEm: data.atualizadoEm || null
+        });
+      } else {
+        // Se já existe, verifica se o atual tem mais informações ou é mais recente
+        const existente = alunosUnicos.get(uid);
+        const atualizadoEmAtual = data.atualizadoEm ? data.atualizadoEm.toMillis() : 0;
+        const atualizadoEmExistente = existente.atualizadoEm ? existente.atualizadoEm.toMillis() : 0;
+        
+        // Mantém o mais recente ou o que tem nome/turma preenchidos
+        if (atualizadoEmAtual > atualizadoEmExistente || 
+            (data.nome && data.nome !== '(sem nome)' && existente.nome === '(sem nome)') ||
+            (data.turma && data.turma !== 'sem turma' && existente.turma === 'sem turma')) {
+          alunosUnicos.set(uid, {
+            uid: uid,
+            nome: data.nome || existente.nome || '(sem nome)',
+            turma: data.turma || existente.turma || 'sem turma',
+            atualizadoEm: data.atualizadoEm || existente.atualizadoEm
+          });
+        }
+      }
+    });
+    
+    // Converte Map para array e ordena por nome
+    const alunosArray = Array.from(alunosUnicos.values());
+    alunosArray.sort((a, b) => {
+      const nomeA = a.nome.toLowerCase();
+      const nomeB = b.nome.toLowerCase();
+      return nomeA.localeCompare(nomeB, 'pt-BR');
+    });
+    
+    // Adiciona ao select
+    alunosArray.forEach((aluno) => {
       const opt = document.createElement('option');
-      opt.value = data.uid || doc.id;
-      opt.textContent = `${data.nome || '(sem nome)'} — ${data.turma || 'sem turma'}`;
+      opt.value = aluno.uid;
+      opt.textContent = `${aluno.nome} — ${aluno.turma}`;
       select.appendChild(opt);
     });
+    
   } catch (e) {
-    console.warn('Erro ao carregar alunos:', e);
-    // Tenta sem orderBy se falhar
-    try {
-      const snap2 = await window.firebaseDb.collection('alunos').get();
-      snap2.forEach((doc) => {
-        const data = doc.data();
-        const opt = document.createElement('option');
-        opt.value = data.uid || doc.id;
-        opt.textContent = `${data.nome || '(sem nome)'} — ${data.turma || 'sem turma'}`;
-        select.appendChild(opt);
-      });
-    } catch (e2) {
-      console.error('Erro ao carregar alunos (sem orderBy):', e2);
-    }
+    console.error('Erro ao carregar alunos:', e);
   }
 }
 
@@ -564,25 +597,51 @@ function configurarListenersTempoReal() {
     // Limpa e recarrega
     select.innerHTML = '<option value=\"\">Selecione um aluno</option><option value=\"todos\">📊 Todos os usuários</option>';
     
-    // Ordena os documentos por nome no cliente
-    const alunos = [];
+    // Usa um Map para evitar duplicatas por uid
+    const alunosUnicos = new Map();
+    
     snapshot.forEach((doc) => {
       const data = doc.data();
-      alunos.push({
-        id: doc.id,
-        uid: data.uid || doc.id,
-        nome: data.nome || '(sem nome)',
-        turma: data.turma || 'sem turma'
-      });
+      const uid = data.uid || doc.id;
+      
+      // Se já existe um aluno com esse uid, mantém o mais recente (com nome e turma)
+      if (!alunosUnicos.has(uid)) {
+        alunosUnicos.set(uid, {
+          uid: uid,
+          nome: data.nome || '(sem nome)',
+          turma: data.turma || 'sem turma',
+          atualizadoEm: data.atualizadoEm || null
+        });
+      } else {
+        // Se já existe, verifica se o atual tem mais informações ou é mais recente
+        const existente = alunosUnicos.get(uid);
+        const atualizadoEmAtual = data.atualizadoEm ? data.atualizadoEm.toMillis() : 0;
+        const atualizadoEmExistente = existente.atualizadoEm ? existente.atualizadoEm.toMillis() : 0;
+        
+        // Mantém o mais recente ou o que tem nome/turma preenchidos
+        if (atualizadoEmAtual > atualizadoEmExistente || 
+            (data.nome && data.nome !== '(sem nome)' && existente.nome === '(sem nome)') ||
+            (data.turma && data.turma !== 'sem turma' && existente.turma === 'sem turma')) {
+          alunosUnicos.set(uid, {
+            uid: uid,
+            nome: data.nome || existente.nome || '(sem nome)',
+            turma: data.turma || existente.turma || 'sem turma',
+            atualizadoEm: data.atualizadoEm || existente.atualizadoEm
+          });
+        }
+      }
     });
     
-    alunos.sort((a, b) => {
+    // Converte Map para array e ordena por nome
+    const alunosArray = Array.from(alunosUnicos.values());
+    alunosArray.sort((a, b) => {
       const nomeA = a.nome.toLowerCase();
       const nomeB = b.nome.toLowerCase();
       return nomeA.localeCompare(nomeB, 'pt-BR');
     });
     
-    alunos.forEach((aluno) => {
+    // Adiciona ao select
+    alunosArray.forEach((aluno) => {
       const opt = document.createElement('option');
       opt.value = aluno.uid;
       opt.textContent = `${aluno.nome} — ${aluno.turma}`;
@@ -590,7 +649,7 @@ function configurarListenersTempoReal() {
     });
     
     // Restaura o valor selecionado se ainda existir
-    if (valorSelecionado) {
+    if (valorSelecionado && select.querySelector(`option[value="${valorSelecionado}"]`)) {
       select.value = valorSelecionado;
     }
   }, (error) => {

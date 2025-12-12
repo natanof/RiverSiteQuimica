@@ -2221,16 +2221,25 @@ async function salvarPerfilAluno() {
   
   try {
     const alunoRef = window.firebaseDb.collection('alunos').doc(user.uid);
-    await alunoRef.set({
+    
+    // Verifica se o documento já existe para preservar criadoEm
+    const docSnapshot = await alunoRef.get();
+    const updateData = {
       uid: user.uid,
       email: user.email || null,
       nome: nome,
       turma: turma,
       displayName: user.displayName || null,
       fotoURL: user.photoURL || null,
-      criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
       atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    };
+    
+    // Só adiciona criadoEm se o documento não existir
+    if (!docSnapshot.exists) {
+      updateData.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+    }
+    
+    await alunoRef.set(updateData, { merge: true });
     
     console.log('Perfil do aluno salvo com sucesso');
     
