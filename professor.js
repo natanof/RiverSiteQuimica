@@ -497,7 +497,7 @@ window.closeChangePasswordModal = closeChangePasswordModal;
 async function carregarAlunosParaSelect() {
   const select = document.getElementById('stats-aluno-select');
   if (!select || !window.firebaseDb) return;
-  select.innerHTML = '<option value=\"\">Selecione um aluno</option>';
+  select.innerHTML = '<option value=\"\">Selecione um aluno</option><option value=\"todos\">📊 Todos os usuários</option>';
   try {
     const snap = await window.firebaseDb.collection('alunos').orderBy('nome').get();
     snap.forEach((doc) => {
@@ -539,7 +539,7 @@ function configurarListenersTempoReal() {
     const valorSelecionado = select.value;
     
     // Limpa e recarrega
-    select.innerHTML = '<option value=\"\">Selecione um aluno</option>';
+    select.innerHTML = '<option value=\"\">Selecione um aluno</option><option value=\"todos\">📊 Todos os usuários</option>';
     
     // Ordena os documentos por nome no cliente
     const alunos = [];
@@ -574,7 +574,7 @@ function configurarListenersTempoReal() {
     console.error('Erro no listener de alunos:', error);
   });
   
-  // Listener para eventos (atualiza estatísticas se um aluno estiver selecionado)
+  // Listener para eventos (atualiza estatísticas se um aluno ou "todos" estiver selecionado)
   const eventosRef = window.firebaseDb.collection('eventos');
   let ultimaAtualizacao = Date.now();
   
@@ -585,7 +585,7 @@ function configurarListenersTempoReal() {
       const agora = Date.now();
       if (agora - ultimaAtualizacao > 2000) {
         ultimaAtualizacao = agora;
-        // Se há um aluno selecionado, atualiza as estatísticas automaticamente
+        // Se há um aluno ou "todos" selecionado, atualiza as estatísticas automaticamente
         atualizarEstatisticasProfessor();
       }
     }
@@ -608,9 +608,11 @@ async function atualizarEstatisticasProfessor() {
   const dataFim = document.getElementById('stats-data-fim')?.value || '';
 
   if (!alunoId) {
-    alert('Selecione um aluno para ver as estatísticas.');
+    alert('Selecione um aluno ou "Todos os usuários" para ver as estatísticas.');
     return;
   }
+  
+  const mostrarTodos = alunoId === 'todos';
 
   // Mostra loading
   const resultadosDiv = document.getElementById('stats-resultados');
@@ -622,10 +624,20 @@ async function atualizarEstatisticasProfessor() {
   if (semDadosDiv) semDadosDiv.style.display = 'none';
 
   try {
-    // Busca todos os eventos do aluno (filtrando por data no cliente para evitar problemas de índice)
+    // Busca todos os eventos (do aluno específico ou de todos)
     const eventosRef = window.firebaseDb.collection('eventos');
-    const query = eventosRef.where('uid', '==', alunoId);
+    let query;
+    if (mostrarTodos) {
+      // Busca todos os eventos sem filtro de uid
+      query = eventosRef;
+    } else {
+      // Busca apenas eventos do aluno selecionado
+      query = eventosRef.where('uid', '==', alunoId);
+    }
     const snap = await query.get();
+    
+    console.log(`[Estatísticas] Buscando eventos para: ${mostrarTodos ? 'Todos os usuários' : alunoId}`);
+    console.log(`[Estatísticas] Total de documentos encontrados: ${snap.size}`);
     
     // Filtra por data no cliente
     const inicioDate = dataInicio ? new Date(dataInicio + 'T00:00:00') : null;
@@ -649,6 +661,11 @@ async function atualizarEstatisticasProfessor() {
     snap.forEach((doc) => {
       const ev = doc.data();
       const tipo = ev.tipo || '';
+      
+      // Debug: log dos primeiros eventos para verificar estrutura
+      if (snap.size > 0 && acessos + cliques + quizResp + refs < 3) {
+        console.log(`[Estatísticas] Evento encontrado:`, { tipo, uid: ev.uid, criadoEm: ev.criadoEm, detalhe: ev.detalhe });
+      }
       
       // Filtra por data
       let dataEvento = null;
@@ -709,6 +726,16 @@ async function atualizarEstatisticasProfessor() {
     if (quizEl) quizEl.textContent = quizResp;
     if (refEl) refEl.textContent = refs;
     
+    // Debug: log dos resultados
+    console.log(`[Estatísticas] Resultados finais:`, { 
+      acessos, 
+      cliques, 
+      quizResp, 
+      refs, 
+      totalEventos: snap.size,
+      tiposEventos 
+    });
+    
     // Garante que os resultados estão visíveis
     if (resultadosDiv) {
       resultadosDiv.style.display = 'grid';
@@ -731,7 +758,12 @@ async function atualizarEstatisticasProfessor() {
     // Tenta sem orderBy se falhar
     if (e.message && e.message.includes('orderBy')) {
       try {
-        let query2 = window.firebaseDb.collection('eventos').where('uid', '==', alunoId);
+        let query2;
+        if (mostrarTodos) {
+          query2 = window.firebaseDb.collection('eventos');
+        } else {
+          query2 = window.firebaseDb.collection('eventos').where('uid', '==', alunoId);
+        }
         if (dataInicio) {
           const inicioDate = new Date(dataInicio + 'T00:00:00');
           query2 = query2.where('criadoEm', '>=', inicioDate);

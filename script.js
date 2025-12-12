@@ -1302,13 +1302,30 @@ function deleteLastChar() {
 }
 
 // ----------------------
-// Função logEvento removida - Firebase não está mais em uso
+// Função para registrar eventos no Firestore
 // ----------------------
 
-// Função logEvento vazia para manter compatibilidade com código existente
-function logEvento(tipo, detalhe) {
-  // Firebase removido - função mantida apenas para compatibilidade
-  return;
+async function logEvento(tipo, detalhe) {
+  // Verifica se Firebase está disponível e se há usuário logado
+  if (!window.firebaseDb || !window.firebaseAuth || !window.firebaseAuth.currentUser) {
+    return;
+  }
+  
+  const user = window.firebaseAuth.currentUser;
+  
+  try {
+    const eventosRef = window.firebaseDb.collection('eventos');
+    await eventosRef.add({
+      uid: user.uid,
+      email: user.email || null,
+      tipo: tipo,
+      detalhe: detalhe || '',
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (error) {
+    // Silencioso para não atrapalhar o usuário
+    console.warn('Erro ao registrar evento:', error);
+  }
 }
 
 // Disponibiliza globalmente para uso em onclick inline
