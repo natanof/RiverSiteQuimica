@@ -306,11 +306,46 @@ header .title {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
-#aluno-logout-btn {
-  padding: 4px 8px;
-  font-size: 0.8rem;
-  min-width: auto;
-}
+  #aluno-logout-btn {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    min-width: auto;
+  }
+  
+  /* Modal de perfil do aluno */
+  #aluno-perfil-modal {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  #aluno-perfil-modal .card {
+    animation: slideInDown 0.3s ease;
+  }
+  
+  @keyframes slideInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  #aluno-perfil-form input:focus {
+    outline: none;
+  }
+  
+  #aluno-perfil-error {
+    animation: shake 0.3s ease;
+  }
+  
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+  }
 
 .ifto-logo {
   max-height: 140px;

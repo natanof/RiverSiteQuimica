@@ -1503,6 +1503,9 @@ function initAlunoAuth() {
         userName.textContent = user.displayName || user.email || 'Usuário';
       }
       
+      // Verifica se o aluno tem perfil completo
+      await verificarECompletarPerfil(user);
+      
       // Carrega o progresso do aluno
       await carregarProgressoAluno();
     } else {
@@ -1524,6 +1527,9 @@ function initAlunoAuth() {
         try {
           const result = await window.firebaseAuth.signInWithPopup(provider);
           console.log('Login bem-sucedido:', result.user);
+          
+          // Verifica e completa perfil se necessário
+          await verificarECompletarPerfil(result.user);
           
           // Salva o progresso após login
           await salvarProgressoAluno();
@@ -1554,12 +1560,16 @@ function initAlunoAuth() {
   }
   
   // Verifica se há resultado de redirect quando a página carrega
-  window.firebaseAuth.getRedirectResult().then((result) => {
-    if (result.credential) {
+  window.firebaseAuth.getRedirectResult().then(async (result) => {
+    if (result.credential && result.user) {
       // Login bem-sucedido via redirect
       console.log('Login bem-sucedido via redirect:', result.user);
+      
+      // Verifica e completa perfil se necessário
+      await verificarECompletarPerfil(result.user);
+      
       // Salva o progresso após login
-      salvarProgressoAluno();
+      await salvarProgressoAluno();
     }
   }).catch((error) => {
     // Erro no redirect (pode ser cancelado pelo usuário)
@@ -1567,6 +1577,25 @@ function initAlunoAuth() {
       console.error('Erro no redirect:', error);
     }
   });
+  
+  // Configura o formulário de perfil
+  const perfilForm = document.getElementById('aluno-perfil-form');
+  if (perfilForm) {
+    perfilForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await salvarPerfilAluno();
+    });
+  }
+  
+  // Fecha modal ao clicar fora
+  const perfilModal = document.getElementById('aluno-perfil-modal');
+  if (perfilModal) {
+    perfilModal.addEventListener('click', (e) => {
+      if (e.target === perfilModal) {
+        fecharModalPerfil();
+      }
+    });
+  }
 
   // Botão de logout
   if (logoutBtn) {
@@ -1580,13 +1609,124 @@ function initAlunoAuth() {
       }
     });
   }
-}('click', (e) => {
-  if (!e.target.closest('.tts-control')) {
-    document.querySelectorAll('.tts-menu').forEach(menu => {
-      menu.style.display = 'none';
-    });
+}
+
+// Função para verificar e completar perfil do aluno
+async function verificarECompletarPerfil(user) {
+  if (!window.firebaseDb || !user) return;
+  
+  try {
+    const alunoRef = window.firebaseDb.collection('alunos').doc(user.uid);
+    const doc = await alunoRef.get();
+    
+    if (!doc.exists || !doc.data().nome || !doc.data().turma) {
+      // Aluno não tem perfil completo, mostra modal
+      mostrarModalPerfil(user);
+    } else {
+      // Atualiza informações do usuário na UI
+      const userName = document.getElementById('aluno-user-name');
+      if (userName) {
+        const data = doc.data();
+        userName.textContent = data.nome || user.displayName || user.email || 'Usuário';
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao verificar perfil:', error);
   }
-});
+}
+
+// Função para mostrar modal de perfil
+function mostrarModalPerfil(user) {
+  const modal = document.getElementById('aluno-perfil-modal');
+  const nomeInput = document.getElementById('aluno-perfil-nome');
+  const errorDiv = document.getElementById('aluno-perfil-error');
+  
+  if (modal) {
+    modal.style.display = 'flex';
+    
+    // Preenche nome com o displayName do Google se disponível
+    if (nomeInput && user.displayName) {
+      nomeInput.value = user.displayName;
+    }
+    
+    if (errorDiv) {
+      errorDiv.style.display = 'none';
+    }
+  }
+}
+
+// Função para fechar modal de perfil
+function fecharModalPerfil() {
+  const modal = document.getElementById('aluno-perfil-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// Função para salvar perfil do aluno
+async function salvarPerfilAluno() {
+  if (!window.firebaseDb || !window.firebaseAuth || !window.firebaseAuth.currentUser) {
+    return;
+  }
+  
+  const user = window.firebaseAuth.currentUser;
+  const nomeInput = document.getElementById('aluno-perfil-nome');
+  const turmaInput = document.getElementById('aluno-perfil-turma');
+  const errorDiv = document.getElementById('aluno-perfil-error');
+  
+  if (!nomeInput || !turmaInput) return;
+  
+  const nome = nomeInput.value.trim();
+  const turma = turmaInput.value.trim();
+  
+  if (!nome || !turma) {
+    if (errorDiv) {
+      errorDiv.textContent = 'Por favor, preencha todos os campos.';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  try {
+    const alunoRef = window.firebaseDb.collection('alunos').doc(user.uid);
+    await alunoRef.set({
+      uid: user.uid,
+      email: user.email || null,
+      nome: nome,
+      turma: turma,
+      displayName: user.displayName || null,
+      fotoURL: user.photoURL || null,
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+      atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    
+    console.log('Perfil do aluno salvo com sucesso');
+    
+    // Atualiza nome na UI
+    const userName = document.getElementById('aluno-user-name');
+    if (userName) {
+      userName.textContent = nome;
+    }
+    
+    // Fecha o modal
+    fecharModalPerfil();
+    
+    // Mostra mensagem de sucesso
+    if (errorDiv) {
+      errorDiv.style.display = 'none';
+    }
+    
+    // Mostra notificação de sucesso
+    alert('Perfil salvo com sucesso! Agora você aparecerá no painel do professor.');
+    
+  } catch (error) {
+    console.error('Erro ao salvar perfil:', error);
+    if (errorDiv) {
+      errorDiv.textContent = 'Erro ao salvar perfil. Tente novamente.';
+      errorDiv.style.display = 'block';
+    }
+  }
+}
 
 function readContent(sectionId, tabId = null) {
   const btn = document.getElementById(`tts-btn-${sectionId}`);
