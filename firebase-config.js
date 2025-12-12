@@ -36,5 +36,22 @@ const PROFESSOR_EMAILS = [
 window.firebaseAuth = firebaseAuth;
 window.firebaseDb = firebaseDb;
 window.PROFESSOR_EMAILS = PROFESSOR_EMAILS;
+window.firebaseConfig = firebaseConfig;
 
+// ============================================================================
+// CONFIGURAÇÃO DO GEMINI API (Google AI)
+// ============================================================================
+// Para usar o assistente de IA, você precisa:
+// 1. Criar uma chave API no Google AI Studio: https://makersuite.google.com/app/apikey
+// 2. Substitua 'SUA_CHAVE_API_GEMINI_AQUI' pela sua chave API
+// 3. A chave é gratuita para uso limitado (verifique limites no Google AI Studio)
+// ============================================================================
+
+// Chave API do Gemini (substitua pela sua chave)
+window.GEMINI_API_KEY = 'AIzaSyBij0K9_g-EqlbleVkz8pVxcrJ9yxpq9UI';
+
+// URL da API do Gemini (usa a versão v1 da API com modelo gemini-1.5-flash)
+// Versões disponíveis: v1 (recomendado) ou v1beta
+// Modelos disponíveis: gemini-1.5-flash, gemini-1.5-pro, gemini-pro (v1 apenas)
+window.GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
 
