@@ -265,6 +265,51 @@ header .title {
   align-items: center;
   justify-content: center;
   margin-left: auto;
+  gap: 16px;
+}
+
+/* Estilos para autenticação do aluno */
+#aluno-auth-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#aluno-user-info {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#aluno-user-name {
+  font-weight: 600;
+  color: #1e40af;
+}
+
+#aluno-login-google-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: all var(--transition-base);
+}
+
+#aluno-login-google-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+#aluno-logout-btn {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  min-width: auto;
 }
 
 .ifto-logo {
@@ -1445,6 +1490,24 @@ footer::before {
   .ifto-logo {
     max-height: 80px;
     width: auto;
+  }
+  
+  #aluno-auth-container {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  #aluno-login-google-btn {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
+  
+  #aluno-user-info {
+    width: 100%;
+    max-width: 280px;
+    flex-direction: column;
+    text-align: center;
   }
   
   #about .card {

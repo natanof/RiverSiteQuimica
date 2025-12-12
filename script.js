@@ -218,10 +218,10 @@ async function salvarProgressoAluno() {
   }
 }
 
-// Função carregarProgressoAluno removida - Firebase não está mais em uso
 async function carregarProgressoAluno() {
-  // Firebase removido - função mantida apenas para compatibilidade
-  return false;
+  if (!window.firebaseDb || !window.firebaseAuth || !window.firebaseAuth.currentUser) {
+    return false;
+  }
   
   const user = window.firebaseAuth.currentUser;
   try {
@@ -1458,6 +1458,75 @@ function toggleTTSMenu(sectionId) {
 
 // Fecha menus ao clicar fora
 document.addEventListener('click', (e) => {
+  if (!e.target.closest('.tts-toggle-btn') && !e.target.closest('.tts-menu')) {
+    document.querySelectorAll('.tts-menu').forEach(m => m.style.display = 'none');
+  }
+});
+
+// Sistema de autenticação do aluno com Google
+function initAlunoAuth() {
+  if (!window.firebaseAuth) {
+    console.warn('Firebase Auth não está disponível');
+    return;
+  }
+
+  const loginBtn = document.getElementById('aluno-login-google-btn');
+  const logoutBtn = document.getElementById('aluno-logout-btn');
+  const userInfo = document.getElementById('aluno-user-info');
+  const userName = document.getElementById('aluno-user-name');
+
+  // Verifica se já está autenticado
+  window.firebaseAuth.onAuthStateChanged(async (user) => {
+    if (user) {
+      // Usuário logado
+      if (loginBtn) loginBtn.style.display = 'none';
+      if (userInfo) userInfo.style.display = 'flex';
+      if (userName) {
+        userName.textContent = user.displayName || user.email || 'Usuário';
+      }
+      
+      // Carrega o progresso do aluno
+      await carregarProgressoAluno();
+    } else {
+      // Usuário não logado
+      if (loginBtn) loginBtn.style.display = 'flex';
+      if (userInfo) userInfo.style.display = 'none';
+    }
+  });
+
+  // Botão de login
+  if (loginBtn) {
+    loginBtn.addEventListener('click', async () => {
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.addScope('profile');
+        provider.addScope('email');
+        
+        const result = await window.firebaseAuth.signInWithPopup(provider);
+        console.log('Login bem-sucedido:', result.user);
+        
+        // Salva o progresso após login
+        await salvarProgressoAluno();
+      } catch (error) {
+        console.error('Erro ao fazer login:', error);
+        alert('Erro ao fazer login com Google. Tente novamente.');
+      }
+    });
+  }
+
+  // Botão de logout
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await window.firebaseAuth.signOut();
+        console.log('Logout realizado');
+      } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+        alert('Erro ao fazer logout. Tente novamente.');
+      }
+    });
+  }
+}('click', (e) => {
   if (!e.target.closest('.tts-control')) {
     document.querySelectorAll('.tts-menu').forEach(menu => {
       menu.style.display = 'none';
@@ -1641,7 +1710,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initTabs();
   initToolsAndAI();
-  // initAlunoAuth(); // Removido - Firebase não está mais em uso
+  initAlunoAuth();
   updateProgress();
   // Atualiza as estatísticas de progresso dos quizzes
   setTimeout(() => {
