@@ -1276,7 +1276,7 @@ async function sendAIMessage(rawQuestion, context) {
 
   try {
     // Prepara o prompt com contexto
-    let prompt = `Você é um assistente especializado em química orgânica. Responda de forma clara, didática e em português brasileiro.
+    let prompt = `Você é um assistente especializado em química orgânica. Responda de forma clara, didática e em português brasileiro, Fazer Calculos de Quimica.
 
 ${context && context.topic ? `Contexto: Esta pergunta é sobre ${context.topic}. ` : ''}
 ${context && context.question ? `Questão relacionada: "${context.question}" ` : ''}
@@ -1285,41 +1285,14 @@ Pergunta do aluno: ${question}
 
 Resposta:`;
 
-    const model = 'mistralai/Mistral-7B-Instruct-v0.2';
-    
-    // Se tiver worker configurado, usa ele; senão, usa proxy público ou API alternativa
-    let apiUrl;
-    let requestBody;
-    
-    if (AI_WORKER_URL) {
-      // Usa worker próprio (Cloudflare Worker que faz proxy)
-      apiUrl = AI_WORKER_URL;
-      requestBody = {
-        model: model,
-        data: {
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 512,
-            temperature: 0.7,
-            return_full_text: false,
-            top_p: 0.9
-          }
-        }
-      };
-    } else {
-      // Usa API alternativa que suporta CORS: Together AI ou outra
-      // Alternativa: usar proxy público CORS (não recomendado para produção)
-      // Vou usar uma solução que funciona diretamente: Together AI (gratuito com limites)
-      apiUrl = 'https://api.together.xyz/inference';
-      requestBody = {
-        model: 'mistralai/Mixtral-8x7B-Instruct-v0.1',
-        prompt: prompt,
-        max_tokens: 512,
-        temperature: 0.7,
-        top_p: 0.9,
-        repetition_penalty: 1.1
-      };
-    }
+    // Agora usamos apenas Workers AI via Cloudflare Worker (AI_WORKER_URL)
+    const apiUrl = AI_WORKER_URL;
+    const requestBody = {
+      // Você pode trocar o modelo de IA aqui se quiser outro modelo da Workers AI
+      // Exemplo: '@cf/mistral/mistral-7b-instruct-v0.1'
+      model: '@cf/meta/llama-3-8b-instruct',
+      prompt: prompt
+    };
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -1352,31 +1325,19 @@ Resposta:`;
     // Remove mensagem de carregamento
     if (loadingMsg) loadingMsg.remove();
     
-    // Extrai a resposta
+    // Extrai a resposta do Worker (formato normalizado pelo worker-ai-proxy.js)
     let answer = '';
-    if (AI_WORKER_URL) {
-      // Resposta do worker (formato Hugging Face)
-      if (Array.isArray(data) && data[0] && data[0].generated_text) {
-        answer = data[0].generated_text.trim();
-      } else if (data.generated_text) {
-        answer = data.generated_text.trim();
-      }
-    } else {
-      // Resposta do Together AI ou outro formato
-      if (data.output && data.output.choices && data.output.choices[0]) {
-        answer = data.output.choices[0].text.trim();
-      } else if (data.choices && data.choices[0]) {
-        answer = data.choices[0].text.trim();
-      }
+    if (data && typeof data.text === 'string') {
+      answer = data.text.trim();
     }
 
     // Limpa a resposta
     if (answer) {
-      answer = answer.split('\n\n')[0].trim();
       answer = answer.replace(/^(Resposta:|Resposta do assistente:)\s*/i, '').trim();
     }
     
-    if (!answer || answer.length < 10) {
+    // Se ainda assim não veio nada, usa fallback local
+    if (!answer) {
       return await useLocalAIFallback(question, context, loadingMsg);
     }
 

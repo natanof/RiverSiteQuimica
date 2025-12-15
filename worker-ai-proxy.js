@@ -1,98 +1,132 @@
-// Cloudflare Worker para fazer proxy da API do Hugging Face
+// Cloudflare Worker para fazer proxy da Workers AI
 // Este worker resolve o problema de CORS permitindo requisições do navegador
+// e usa apenas modelos de IA da Cloudflare (Workers AI).
 
-// Usa a sintaxe mais compatível do Cloudflare Workers
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request));
-});
+// IMPORTANTE:
+// - No wrangler.toml precisa ter:
+//   [ai]
+//   binding = "AI"
+//
+// - O front-end deve enviar POST com body:
+//   { "prompt": "texto da pergunta", "model": "@cf/meta/llama-3-8b-instruct" (opcional) }
 
-async function handleRequest(request) {
-  // Permite CORS para todas as origens
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-        'Access-Control-Allow-Headers': 'Content-Type, Cache-Control',
-        'Access-Control-Max-Age': '86400',
-      },
-    });
-  }
+const DEFAULT_MODEL = '@cf/meta/llama-3-8b-instruct';
 
-  // Aceita GET para teste e POST para requisições
-  if (request.method === 'GET') {
-    return new Response(JSON.stringify({ 
-      status: 'ok', 
-      message: 'AI Proxy Worker está funcionando',
-      endpoint: 'POST / com body: { model: string, data: object }'
-    }), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    });
-  }
-
-  // Apenas aceita POST para requisições de IA
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed. Use POST.' }), {
-      status: 405,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    });
-  }
-
-  try {
-    const body = await request.json();
-    const model = body.model || 'mistralai/Mistral-7B-Instruct-v0.2';
-    
-    // Valida o body
-    if (!body.data || !body.data.inputs) {
-      return new Response(JSON.stringify({ 
-        error: 'Invalid request body. Expected: { model: string, data: { inputs: string, parameters: object } }' 
-      }), {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-      });
-    }
-    
-    // Faz a requisição para a API do Hugging Face
-    const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body.data),
-    });
-
-    const data = await response.json();
-
-    // Retorna com CORS habilitado
-    return new Response(JSON.stringify(data), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-        'Access-Control-Allow-Headers': 'Content-Type, Cache-Control',
-      },
-      status: response.status,
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error',
-      details: error.toString()
-    }), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      status: 500,
-    });
-  }
+function corsHeaders(extra = {}) {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+    'Access-Control-Allow-Headers': 'Content-Type, Cache-Control',
+    'Access-Control-Max-Age': '86400',
+    'Content-Type': 'application/json',
+    ...extra,
+  };
 }
 
+export default {
+  async fetch(request, env, ctx) {
+    // Pré‑flight CORS
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders() });
+    }
+
+    // GET para teste rápido
+    if (request.method === 'GET') {
+      const body = {
+        status: 'ok',
+        message: 'AI Proxy Worker (Workers AI) está funcionando',
+        usage: 'POST / com body: { prompt: string, model?: string }',
+        defaultModel: DEFAULT_MODEL,
+      };
+      return new Response(JSON.stringify(body), {
+        headers: corsHeaders(),
+        status: 200,
+      });
+    }
+
+    // Aceita apenas POST para geração de texto
+    if (request.method !== 'POST') {
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed. Use POST.' }),
+        { status: 405, headers: corsHeaders() },
+      );
+    }
+
+    try {
+      const body = await request.json().catch(() => null);
+
+      if (!body || typeof body !== 'object') {
+        return new Response(
+          JSON.stringify({ error: 'Body inválido. Envie JSON.' }),
+          { status: 400, headers: corsHeaders() },
+        );
+      }
+
+      const prompt = (body.prompt || '').toString().trim();
+      const model = (body.model || DEFAULT_MODEL).toString();
+
+      if (!prompt) {
+        return new Response(
+          JSON.stringify({ error: 'Campo "prompt" é obrigatório.' }),
+          { status: 400, headers: corsHeaders() },
+        );
+      }
+
+      // Chamada para Workers AI (modelo de texto)
+      // Usando formato de chat para melhor controle
+      const messages = [
+        {
+          role: 'system',
+          content:
+            'Você é um assistente de química orgânica que responde em português do Brasil, de forma clara e didática.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ];
+
+      const aiResponse = await env.AI.run(model, { messages });
+
+      // Normaliza a resposta em uma string simples
+      let text = '';
+
+      // Formato padrão de chat do Workers AI
+      if (aiResponse && typeof aiResponse.response === 'string') {
+        text = aiResponse.response;
+      }
+      // Outros formatos possíveis (fallbacks)
+      else if (Array.isArray(aiResponse) && aiResponse[0]?.generated_text) {
+        text = aiResponse[0].generated_text;
+      } else if (aiResponse?.generated_text) {
+        text = aiResponse.generated_text;
+      }
+
+      text = (text || '').toString().trim();
+
+      if (!text) {
+        return new Response(
+          JSON.stringify({
+            error: 'Não foi possível gerar resposta com a IA.',
+          }),
+          { status: 502, headers: corsHeaders() },
+        );
+      }
+
+      const result = { text };
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: corsHeaders(),
+      });
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          error: error?.message || 'Erro interno no Worker',
+          details: error?.toString?.() || String(error),
+        }),
+        { status: 500, headers: corsHeaders() },
+      );
+    }
+  },
+};
