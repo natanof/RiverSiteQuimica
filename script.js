@@ -1246,9 +1246,17 @@ let aiChatVisible = false;
 function appendAIMessage(sender, text) {
   const box = document.getElementById('ai-chat-messages');
   if (!box) return;
+
+  // Escapa HTML básico e converte quebras de linha em <br> para manter parágrafos
+  const safeText = String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+
   const row = document.createElement('div');
-  row.style.marginBottom = '6px';
-  row.innerHTML = `<strong style="color:${sender === 'ia' ? '#2563eb' : '#0f172a'}">${sender === 'ia' ? 'IA' : 'Você'}:</strong> <span>${text}</span>`;
+  row.style.marginBottom = '8px';
+  row.innerHTML = `<strong style="color:${sender === 'ia' ? '#2563eb' : '#0f172a'}; display:block; margin-bottom:2px;">${sender === 'ia' ? 'IA' : 'Você'}:</strong><div class="ai-chat-text">${safeText}</div>`;
   box.appendChild(row);
   box.scrollTop = box.scrollHeight;
 }
@@ -1276,14 +1284,29 @@ async function sendAIMessage(rawQuestion, context) {
 
   try {
     // Prepara o prompt com contexto
-    let prompt = `Você é um assistente especializado em química orgânica. Responda de forma clara, didática e em português brasileiro, Fazer Calculos de Quimica.
+    let prompt = `Você é um assistente de estudos para alunos do ensino médio, especializado em QUÍMICA (principalmente química orgânica).
+Responda SEMPRE em português brasileiro, de forma clara, didática e amigável.
 
-${context && context.topic ? `Contexto: Esta pergunta é sobre ${context.topic}. ` : ''}
-${context && context.question ? `Questão relacionada: "${context.question}" ` : ''}
+Sua forma de resposta deve seguir estas regras:
 
-Pergunta do aluno: ${question}
+1) Explique conceitos de química orgânica (alcanos, alcenos, alcinos, compostos oxigenados, nomenclatura, etc.) usando frases simples e exemplos.
+2) Ajude o aluno a tirar dúvidas teóricas e resolver exercícios.
+3) Em questões com CÁLCULOS, mostre o passo a passo com bastante clareza:
+   - escreva a fórmula usada;
+   - depois mostre a substituição dos valores;
+   - em seguida, faça o cálculo numérico etapa por etapa;
+   - por fim, apresente o resultado com a unidade correta.
+4) Use parágrafos separados por linhas em branco para organizar a explicação (não use negrito nem formatação especial de markdown).
+5) Quando fizer uma explicação mais longa, você pode usar listas numeradas (1., 2., 3.) ou com traços (-) para organizar os passos.
+6) Evite dar apenas a resposta final; sempre explique o raciocínio.
 
-Resposta:`;
+${context && context.topic ? `Contexto adicional: Esta pergunta está dentro do tópico "${context.topic}". ` : ''}
+${context && context.question ? `Questão relacionada anterior: "${context.question}" ` : ''}
+
+Pergunta do aluno (copie antes de responder):
+${question}
+
+Agora responda da melhor forma possível para ajudar o aluno:`;
 
     // Agora usamos apenas Workers AI via Cloudflare Worker (AI_WORKER_URL)
     const apiUrl = AI_WORKER_URL;
