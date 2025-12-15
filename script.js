@@ -1254,9 +1254,23 @@ function appendAIMessage(sender, text) {
     .replace(/>/g, '&gt;')
     .replace(/\n/g, '<br>');
 
+  const isIA = sender === 'ia';
+  const isUser = !isIA;
+  const userPhoto = isUser && window.currentAlunoUser && window.currentAlunoUser.photoURL;
+
   const row = document.createElement('div');
-  row.style.marginBottom = '8px';
-  row.innerHTML = `<strong style="color:${sender === 'ia' ? '#2563eb' : '#0f172a'}; display:block; margin-bottom:2px;">${sender === 'ia' ? 'IA' : 'Você'}:</strong><div class="ai-chat-text">${safeText}</div>`;
+  row.className = 'ai-chat-message ai-chat-message-' + (sender === 'ia' ? 'ia' : 'user');
+  row.innerHTML = `
+    <div class="ai-chat-avatar">
+      <div class="ai-chat-avatar-circle">
+        ${userPhoto ? `<img src="${userPhoto}" alt="Avatar do aluno" class="ai-chat-avatar-img">` : (isIA ? 'IA' : 'V')}
+      </div>
+    </div>
+    <div class="ai-chat-bubble">
+      <div class="ai-chat-name">${isIA ? 'IA' : 'Você'}</div>
+      <div class="ai-chat-text">${safeText}</div>
+    </div>
+  `;
   box.appendChild(row);
   box.scrollTop = box.scrollHeight;
 }
@@ -1268,6 +1282,56 @@ const AI_WORKER_URL = 'https://ai-proxy.natanaelrodriguesfernandes521.workers.de
 async function sendAIMessage(rawQuestion, context) {
   const question = rawQuestion.trim();
   if (!question) return;
+
+  // Garante que o aluno esteja logado antes de usar o chat de IA
+  if (!window.currentAlunoUser) {
+    // Mensagem especial com botão de login direto
+    const box = document.getElementById('ai-chat-messages');
+    if (box) {
+      const row = document.createElement('div');
+      row.className = 'ai-chat-message ai-chat-message-ia';
+      row.innerHTML = `
+        <div class="ai-chat-avatar">
+          <div class="ai-chat-avatar-circle">IA</div>
+        </div>
+        <div class="ai-chat-bubble">
+          <div class="ai-chat-name">IA</div>
+          <div class="ai-chat-text">
+            Para usar o assistente de Química, você precisa fazer login com sua conta Google.
+            <br><br>
+            <button type="button" id="ai-chat-login-inline-btn" class="btn primary" style="margin-top:4px; padding:6px 10px; font-size:0.85rem;">
+              Fazer login com Google
+            </button>
+          </div>
+        </div>
+      `;
+      box.appendChild(row);
+      box.scrollTop = box.scrollHeight;
+
+      const inlineBtn = row.querySelector('#ai-chat-login-inline-btn');
+      if (inlineBtn) {
+        inlineBtn.addEventListener('click', () => {
+          const loginBtn = document.getElementById('aluno-login-google-btn');
+          if (loginBtn) {
+            loginBtn.click();
+          }
+        });
+      }
+    }
+
+    const loginBtn = document.getElementById('aluno-login-google-btn');
+    if (loginBtn) {
+      // Dá um destaque temporário no botão de login
+      const originalAnimation = loginBtn.style.animation;
+      loginBtn.style.animation = 'pulse 1s ease-in-out 0s 3';
+      setTimeout(() => {
+        loginBtn.style.animation = originalAnimation;
+      }, 3500);
+      loginBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return;
+  }
+
   appendAIMessage('user', question);
 
   // Mostra indicador de carregamento
@@ -1285,20 +1349,22 @@ async function sendAIMessage(rawQuestion, context) {
   try {
     // Prepara o prompt com contexto
     let prompt = `Você é um assistente de estudos para alunos do ensino médio, especializado em QUÍMICA (principalmente química orgânica).
-Responda SEMPRE em português brasileiro, de forma clara, didática e amigável.
+Responda SEMPRE em português brasileiro, de forma clara, didática, amigável e acolhedora.
 
-Sua forma de resposta deve seguir estas regras:
+Sempre que o aluno fizer uma nova pergunta, siga estas orientações:
 
-1) Explique conceitos de química orgânica (alcanos, alcenos, alcinos, compostos oxigenados, nomenclatura, etc.) usando frases simples e exemplos.
-2) Ajude o aluno a tirar dúvidas teóricas e resolver exercícios.
-3) Em questões com CÁLCULOS, mostre o passo a passo com bastante clareza:
+1) Comece com um cumprimento curto e simpático (por exemplo: "Oi! Tudo bem? 🙂" ou "Olá! Vamos entender isso juntos 😄").
+2) Deixe claro que ele pode perguntar qualquer coisa relacionada a química (conteúdo teórico, exercícios, cálculos, curiosidades, revisão para prova, etc.).
+3) Explique conceitos de química orgânica (alcanos, alcenos, alcinos, compostos oxigenados, nomenclatura, etc.) usando frases simples e exemplos do cotidiano.
+4) Em questões com CÁLCULOS, mostre o passo a passo com bastante clareza:
    - escreva a fórmula usada;
    - depois mostre a substituição dos valores;
    - em seguida, faça o cálculo numérico etapa por etapa;
    - por fim, apresente o resultado com a unidade correta.
-4) Use parágrafos separados por linhas em branco para organizar a explicação (não use negrito nem formatação especial de markdown).
-5) Quando fizer uma explicação mais longa, você pode usar listas numeradas (1., 2., 3.) ou com traços (-) para organizar os passos.
-6) Evite dar apenas a resposta final; sempre explique o raciocínio.
+5) Use parágrafos separados por linhas em branco para organizar a explicação (sem precisar usar negrito ou markdown).
+6) Quando fizer uma explicação mais longa, você pode usar listas numeradas (1., 2., 3.) ou com traços (-) para organizar os passos.
+7) Use emojis de forma moderada para deixar a conversa mais leve (por exemplo: 🙂, 😄, 🔬, 📚, ✅), mas sem exagerar.
+8) Evite dar apenas a resposta final; sempre explique o raciocínio.
 
 ${context && context.topic ? `Contexto adicional: Esta pergunta está dentro do tópico "${context.topic}". ` : ''}
 ${context && context.question ? `Questão relacionada anterior: "${context.question}" ` : ''}
@@ -1931,6 +1997,8 @@ function initAlunoAuth() {
   // Verifica se já está autenticado
   window.firebaseAuth.onAuthStateChanged(async (user) => {
     if (user) {
+      // Guarda usuário atual globalmente para uso em outras partes (ex: avatar no chat de IA)
+      window.currentAlunoUser = user;
       // Usuário logado
       if (loginBtn) loginBtn.style.display = 'none';
       if (userInfo) userInfo.style.display = 'flex';
@@ -1966,6 +2034,8 @@ function initAlunoAuth() {
       // Atualiza a UI após carregar o progresso
       updateProgress();
     } else {
+      // Remove referência global do usuário
+      window.currentAlunoUser = null;
       // Usuário não logado - limpa o estado local mas mantém no Firestore
       if (loginBtn) loginBtn.style.display = 'flex';
       if (userInfo) userInfo.style.display = 'none';
