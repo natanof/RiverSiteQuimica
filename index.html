@@ -3380,6 +3380,30 @@
     </div>
   </div>
   
+  <!-- Modal de confirmação de conta excluída -->
+  <div id="aluno-conta-excluida-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.6); z-index:11000; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px)" onclick="if(event.target.id === 'aluno-conta-excluida-modal') fecharContaExcluidaModal()">
+    <div class="card" style="max-width:420px; width:100%; padding:28px 24px 24px 24px; text-align:center; position:relative; animation:fadeIn 0.3s ease" onclick="event.stopPropagation()">
+      <div style="width:56px; height:56px; border-radius:999px; margin:0 auto 16px auto; display:flex; align-items:center; justify-content:center; background:rgba(220,38,38,0.08); border:2px solid rgba(220,38,38,0.4)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <line x1="10" y1="11" x2="10" y2="17"/>
+          <line x1="14" y1="11" x2="14" y2="17"/>
+        </svg>
+      </div>
+      <h3 style="margin:0 0 8px 0; font-size:1.4rem; color:#111827">Conta excluída</h3>
+      <p style="margin:0 0 16px 0; font-size:0.95rem; color:#4b5563">
+        Sua conta foi excluída com sucesso e você foi desconectado do sistema.
+      </p>
+      <p style="margin:0 0 20px 0; font-size:0.9rem; color:#9ca3af">
+        Você pode continuar explorando o conteúdo como visitante ou criar uma nova conta quando quiser.
+      </p>
+      <button type="button" class="btn primary" style="width:100%; justify-content:center; font-weight:600" onclick="fecharContaExcluidaModal()">
+        Voltar para a página inicial
+      </button>
+    </div>
+  </div>
+
   <!-- Modal de Zoom para Estruturas Moleculares -->
   <div id="molecular-zoom-modal" class="molecular-zoom-modal" style="display:none;">
     <div class="molecular-zoom-backdrop" onclick="closeMolecularZoom()"></div>

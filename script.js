@@ -2784,20 +2784,16 @@ async function abrirConfirmacaoExcluirConta() {
     // Exclui o usuário da autenticação
     await user.delete();
 
-    // Mensagem de sucesso dentro do modal
-    const successDiv = document.getElementById('aluno-perfil-success');
-    if (successDiv) {
-      successDiv.textContent = 'Sua conta foi excluída com sucesso.';
-      successDiv.style.display = 'block';
+    // Tenta garantir que o usuário está deslogado
+    if (window.firebaseAuth) {
+      try { await window.firebaseAuth.signOut(); } catch (e) {}
     }
 
-    // Fecha modal de perfil e atualiza layout
+    // Fecha modal de perfil e mostra página de confirmação
     fecharModalPerfil();
-    if (typeof firebaseAuth !== 'undefined') {
-      // onAuthStateChanged já deve atualizar a UI, mas garantimos um reload leve
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+    const contaExcluidaModal = document.getElementById('aluno-conta-excluida-modal');
+    if (contaExcluidaModal) {
+      contaExcluidaModal.style.display = 'flex';
     }
   } catch (error) {
     console.error('Erro ao excluir conta:', error);
@@ -3095,4 +3091,10 @@ window.abrirModalEditarPerfil = abrirModalEditarPerfil;
 window.fecharModalPerfil = fecharModalPerfil;
 window.salvarPerfilAluno = salvarPerfilAluno;
 window.abrirConfirmacaoExcluirConta = abrirConfirmacaoExcluirConta;
+window.fecharContaExcluidaModal = function () {
+  const modal = document.getElementById('aluno-conta-excluida-modal');
+  if (modal) modal.style.display = 'none';
+  // Volta para o topo da página inicial
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
