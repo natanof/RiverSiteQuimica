@@ -2094,6 +2094,12 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Erro ao registrar clique:', err);
     }
   });
+
+  // Botão "Excluir minha conta" no modal de perfil
+  const deleteAccountBtn = document.getElementById('aluno-perfil-delete-btn');
+  if (deleteAccountBtn) {
+    deleteAccountBtn.addEventListener('click', abrirConfirmacaoExcluirConta);
+  }
 });
 // Funções do professor movidas para professor.js
 // Sistema de Texto para Voz (TTS) - Melhorado
@@ -2495,6 +2501,10 @@ async function abrirModalEditarPerfil() {
   const subtitleEl = document.getElementById('aluno-perfil-modal-subtitle');
   const modalAvatarImg = document.getElementById('aluno-perfil-modal-avatar-img');
   const modalAvatarIcon = document.getElementById('aluno-perfil-modal-avatar-icon');
+  const deleteBtn = document.getElementById('aluno-perfil-delete-btn');
+  const deleteWarning = document.getElementById('aluno-perfil-delete-warning');
+  const deleteBtn = document.getElementById('aluno-perfil-delete-btn');
+  const deleteWarning = document.getElementById('aluno-perfil-delete-warning');
   
   if (!modal) return;
   
@@ -2550,6 +2560,10 @@ async function abrirModalEditarPerfil() {
     successDiv.style.display = 'none';
     successDiv.textContent = '';
   }
+
+  // Mostra opção de excluir conta apenas no modo "editar perfil"
+  if (deleteBtn) deleteBtn.style.display = 'flex';
+  if (deleteWarning) deleteWarning.style.display = 'block';
   
   // Mostra o modal
   modal.style.display = 'flex';
@@ -2597,6 +2611,10 @@ function mostrarModalPerfil(user) {
     if (turmaInput) {
       turmaInput.value = '';
     }
+
+    // No primeiro acesso, não mostra botão de excluir conta
+    if (deleteBtn) deleteBtn.style.display = 'none';
+    if (deleteWarning) deleteWarning.style.display = 'none';
     
     if (errorDiv) {
       errorDiv.style.display = 'none';
@@ -2706,6 +2724,71 @@ async function salvarPerfilAluno() {
     if (errorDiv) {
       errorDiv.textContent = 'Erro ao salvar perfil. Tente novamente.';
       errorDiv.style.display = 'block';
+    }
+  }
+}
+
+// Confirmação e exclusão de conta do aluno
+async function abrirConfirmacaoExcluirConta() {
+  if (!window.firebaseAuth || !window.firebaseAuth.currentUser) {
+    alert('Você precisa estar logado para excluir sua conta.');
+    return;
+  }
+
+  const confirmar = confirm(
+    'Tem certeza de que deseja excluir sua conta?\n\n' +
+    'Seu acesso, perfil e parte do seu progresso poderão ser removidos do sistema. ' +
+    'Essa ação não pode ser desfeita.'
+  );
+
+  if (!confirmar) return;
+
+  try {
+    const user = window.firebaseAuth.currentUser;
+
+    // Remove perfil do Firestore
+    if (window.firebaseDb && user?.uid) {
+      try {
+        await window.firebaseDb.collection('alunos').doc(user.uid).delete();
+      } catch (e) {
+        console.warn('Erro ao remover documento de aluno:', e);
+      }
+    }
+
+    // Tenta remover eventos do aluno (se coleção existir)
+    if (window.firebaseDb && user?.uid) {
+      try {
+        const eventosSnap = await window.firebaseDb
+          .collection('eventos')
+          .where('uid', '==', user.uid)
+          .get();
+        const batch = window.firebaseDb.batch();
+        eventosSnap.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      } catch (e) {
+        console.warn('Erro ao remover eventos do aluno:', e);
+      }
+    }
+
+    // Exclui o usuário da autenticação
+    await user.delete();
+
+    alert('Sua conta foi excluída com sucesso.');
+
+    // Fecha modal de perfil e atualiza layout
+    fecharModalPerfil();
+    if (typeof firebaseAuth !== 'undefined') {
+      // onAuthStateChanged já deve atualizar a UI, mas garantimos um reload leve
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    }
+  } catch (error) {
+    console.error('Erro ao excluir conta:', error);
+    if (error.code === 'auth/requires-recent-login') {
+      alert('Por segurança, faça login novamente e tente excluir a conta de novo.');
+    } else {
+      alert('Não foi possível excluir sua conta agora. Tente novamente mais tarde.');
     }
   }
 }
@@ -2987,4 +3070,5 @@ window.closeMolecularZoom = closeMolecularZoom;
 window.abrirModalEditarPerfil = abrirModalEditarPerfil;
 window.fecharModalPerfil = fecharModalPerfil;
 window.salvarPerfilAluno = salvarPerfilAluno;
+window.abrirConfirmacaoExcluirConta = abrirConfirmacaoExcluirConta;
 
