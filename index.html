@@ -751,6 +751,160 @@
         </div>
 
         <div style="max-width:900px; margin:0 auto">
+          <!-- Calculadora de Fórmula Geral -->
+          <div class="card" style="margin-bottom:24px; border:1px solid var(--border); background:white">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
+              <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #8b5cf6, #7c3aed); display:flex; align-items:center; justify-content:center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+              </div>
+              <h4 style="margin:0; font-size:1.1rem; color:#1e40af">Fórmula Geral</h4>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <label style="font-size:0.9rem; color:#4b5563">
+                Tipo de hidrocarboneto
+                <select id="formula-tipo-select" style="margin-top:4px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit; font-size:0.95rem">
+                  <option value="alcano">Alcanos (C<sub>n</sub>H<sub>2n+2</sub>)</option>
+                  <option value="alceno">Alcenos (C<sub>n</sub>H<sub>2n</sub>)</option>
+                  <option value="alcino">Alcinos (C<sub>n</sub>H<sub>2n-2</sub>)</option>
+                </select>
+              </label>
+
+              <label style="font-size:0.9rem; color:#4b5563">
+                Número de carbonos (n)
+                <input id="formula-n-input" type="number" min="1" step="1" placeholder="ex: 3"
+                  style="margin-top:4px; width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit">
+              </label>
+
+              <button id="formula-calcular-btn" class="btn primary" style="align-self:flex-start">Calcular fórmula</button>
+              <div id="formula-resultado" class="note" style="display:none"></div>
+            </div>
+          </div>
+
+          <!-- Calculadora de mol, massa e partículas -->
+          <div class="card" style="margin-bottom:24px; border:1px solid var(--border); background:white">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
+              <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #f97316, #ea580c); display:flex; align-items:center; justify-content:center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M8 10h3v6M16 10h-3v6"/>
+                </svg>
+              </div>
+              <h4 style="margin:0; font-size:1.1rem; color:#1e40af">Mol, massa e partículas</h4>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <label style="font-size:0.9rem; color:#4b5563">
+                O que você quer calcular?
+                <select id="mol-tipo" style="margin-top:4px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit; font-size:0.95rem">
+                  <option value="mol">Quantidade de mols (n)</option>
+                  <option value="massa">Massa (m, em g)</option>
+                  <option value="particulas">Número de partículas (N)</option>
+                </select>
+              </label>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px">
+                <label style="font-size:0.9rem; color:#4b5563">
+                  Massa (m, em g)
+                  <input id="mol-massa" type="number" step="any" placeholder="ex: 18"
+                    style="margin-top:4px; width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit">
+                </label>
+                <label style="font-size:0.9rem; color:#4b5563">
+                  Mol (n, em mol)
+                  <input id="mol-n" type="number" step="any" placeholder="ex: 0.5"
+                    style="margin-top:4px; width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit">
+                </label>
+                <label style="font-size:0.9rem; color:#4b5563">
+                  Massa molar (M, g/mol)
+                  <input id="mol-molar" type="number" step="any" placeholder="ex: 18"
+                    style="margin-top:4px; width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit">
+                </label>
+                <label style="font-size:0.9rem; color:#4b5563">
+                  Número de partículas (N)
+                  <input id="mol-N" type="number" step="any" placeholder="ex: 3.01e23"
+                    style="margin-top:4px; width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit">
+                </label>
+              </div>
+
+              <small style="font-size:0.8rem; color:#6b7280">
+                Use N<sub>A</sub> ≈ 6,02 × 10²³ partículas/mol. Preencha os dados conhecidos e escolha o que deseja calcular.
+              </small>
+
+              <button id="mol-calcular-btn" class="btn primary" style="align-self:flex-start">Calcular passo a passo</button>
+              <div id="mol-resultado" class="note" style="display:none"></div>
+            </div>
+          </div>
+
+          <!-- Calculadora de concentração -->
+          <div class="card" style="margin-bottom:24px; border:1px solid var(--border); background:white">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
+              <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #0ea5e9, #0369a1); display:flex; align-items:center; justify-content:center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <path d="M7 4h10l1 6H6z"/><path d="M6 10h12l-1 8H7z"/>
+                </svg>
+              </div>
+              <h4 style="margin:0; font-size:1.1rem; color:#1e40af">Concentração de soluções</h4>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <label style="font-size:0.9rem; color:#4b5563">
+                Tipo de concentração
+                <select id="conc-tipo" style="margin-top:4px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit; font-size:0.95rem">
+                  <option value="molL">Concentração molar (mol/L)</option>
+                  <option value="gL">Concentração em g/L</option>
+                  <option value="ppm">Concentração em ppm (m/m)</option>
+                </select>
+              </label>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px">
+                <label style="font-size:0.9rem; color:#4b5563">
+                  Massa do soluto (g)
+                  <input id="conc-massa-soluto" type="number" step="any" placeholder="ex: 10"
+                    style="margin-top:4px; width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit">
+                </label>
+                <label style="font-size:0.9rem; color:#4b5563">
+                  Volume da solução (L)
+                  <input id="conc-volume" type="number" step="any" placeholder="ex: 0.5"
+                    style="margin-top:4px; width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit">
+                </label>
+                <label style="font-size:0.9rem; color:#4b5563">
+                  Massa total da solução (g) (para ppm)
+                  <input id="conc-massa-total" type="number" step="any" placeholder="ex: 1000"
+                    style="margin-top:4px; width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit">
+                </label>
+              </div>
+
+              <button id="conc-calcular-btn" class="btn primary" style="align-self:flex-start">Calcular concentração</button>
+              <div id="conc-resultado" class="note" style="display:none"></div>
+            </div>
+          </div>
+
+          <!-- Simulador de equilíbrio de reações -->
+          <div class="card" style="margin-bottom:24px; border:1px solid var(--border); background:white">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
+              <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #22c55e, #15803d); display:flex; align-items:center; justify-content:center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                  <path d="M4 7h16M4 17h16"/><path d="M7 7l-3 3m3-3l-3-3M20 17l-3 3m3-3l-3-3"/>
+                </svg>
+              </div>
+              <h4 style="margin:0; font-size:1.1rem; color:#1e40af">Equilíbrio de reações simples</h4>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px">
+              <label style="font-size:0.9rem; color:#4b5563">
+                Digite a reação (sem coeficientes) – ex: H2 + O2 -> H2O
+                <input id="eq-reacao" type="text" placeholder="ex: H2 + O2 -> H2O"
+                  style="margin-top:4px; width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-family:inherit">
+              </label>
+
+              <button id="eq-calcular-btn" class="btn primary" style="align-self:flex-start">Verificar e balancear</button>
+              <div id="eq-resultado" class="note" style="display:none"></div>
+            </div>
+          </div>
+
           <!-- Calculadora de Massa Molecular -->
           <div class="card" style="margin-bottom:24px; border:1px solid var(--border); background:white">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
@@ -850,30 +1004,7 @@
             </div>
           </div>
 
-          <!-- Calculadora de Fórmula Geral -->
-          <div class="card" style="border:1px solid var(--border); background:white">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
-              <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #8b5cf6, #7c3aed); display:flex; align-items:center; justify-content:center">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M12 6v6l4 2"/>
-                </svg>
-              </div>
-              <h4 style="margin:0; font-size:1.1rem; color:#1e40af">Fórmula Geral</h4>
-            </div>
-            
-            <div style="display:flex; flex-direction:column; gap:12px">
-              <select id="formula-tipo-select" style="padding:12px 14px; border-radius:10px; border:2px solid var(--border); font-family:inherit; font-size:0.95rem; width:100%">
-                <option value="alcano">Alcano</option>
-                <option value="alceno">Alceno</option>
-                <option value="alcino">Alcino</option>
-              </select>
-              <input id="formula-n-input" type="number" min="1" step="1" value="1" placeholder="Número de carbonos (n)" style="padding:12px 14px; border-radius:10px; border:2px solid var(--border); font-family:inherit; font-size:1rem; width:100%">
-              <button id="formula-calcular-btn" class="btn primary" style="align-self:flex-start">Calcular</button>
-              <div id="formula-resultado" class="note" style="display:none"></div>
-            </div>
-          </div>
-        </div>
+
       </article>
       <article id="alcenos" class="section">
         <div style="margin-bottom:24px">

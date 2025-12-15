@@ -1684,6 +1684,222 @@ function initToolsAndAI() {
     }
   }
 
+  // Calculadora de mol, massa e partículas
+  const molTipo = document.getElementById('mol-tipo');
+  const molMassa = document.getElementById('mol-massa');
+  const molN = document.getElementById('mol-n');
+  const molMolar = document.getElementById('mol-molar');
+  const molNPart = document.getElementById('mol-N');
+  const molBtn = document.getElementById('mol-calcular-btn');
+  const molRes = document.getElementById('mol-resultado');
+
+  if (molBtn && molTipo && molMassa && molN && molMolar && molNPart && molRes) {
+    molBtn.addEventListener('click', () => {
+      const tipo = molTipo.value;
+      const m = parseFloat((molMassa.value || '').replace(',', '.'));
+      const n = parseFloat((molN.value || '').replace(',', '.'));
+      const M = parseFloat((molMolar.value || '').replace(',', '.'));
+      const Np = parseFloat((molNPart.value || '').replace(',', '.'));
+      const NA = 6.02e23;
+
+      molRes.style.display = 'block';
+      let html = '';
+
+      if (tipo === 'mol') {
+        if (!isFinite(m) || !isFinite(M)) {
+          molRes.innerHTML = '<span style="color:#ef4444">Informe a massa (m) e a massa molar (M) para calcular n.</span>';
+          return;
+        }
+        const nCalc = m / M;
+        html += '<strong>Objetivo:</strong> calcular a quantidade de mols (n).<br><br>';
+        html += 'Usamos a fórmula:<br>';
+        html += '<code>n = m / M</code><br><br>';
+        html += `Substituindo os valores:<br>`;
+        html += `n = ${m} g / ${M} g/mol<br><br>`;
+        html += `n ≈ <strong>${nCalc.toFixed(3)} mol</strong>`;
+        molRes.innerHTML = html;
+      } else if (tipo === 'massa') {
+        if (!isFinite(n) || !isFinite(M)) {
+          molRes.innerHTML = '<span style="color:#ef4444">Informe n (mol) e M (g/mol) para calcular a massa.</span>';
+          return;
+        }
+        const mCalc = n * M;
+        html += '<strong>Objetivo:</strong> calcular a massa (m).<br><br>';
+        html += 'Usamos a fórmula:<br>';
+        html += '<code>m = n · M</code><br><br>';
+        html += `Substituindo:<br>`;
+        html += `m = ${n} mol · ${M} g/mol<br><br>`;
+        html += `m ≈ <strong>${mCalc.toFixed(3)} g</strong>`;
+        molRes.innerHTML = html;
+      } else {
+        // partículas
+        if (!isFinite(n) && !isFinite(Np)) {
+          molRes.innerHTML = '<span style="color:#ef4444">Informe n (mol) ou N (nº de partículas).</span>';
+          return;
+        }
+        if (!isFinite(Np)) {
+          const Ncalc = n * NA;
+          html += '<strong>Objetivo:</strong> calcular o número de partículas (N).</strong><br><br>';
+          html += 'Usamos a relação:<br>';
+          html += '<code>N = n · N_A</code><br><br>';
+          html += `Substituindo:<br>`;
+          html += `N = ${n} mol · 6,02 × 10²³ partículas/mol<br><br>`;
+          html += `N ≈ <strong>${(Ncalc).toExponential(3)} partículas</strong>`;
+        } else {
+          const nCalc = Np / NA;
+          html += '<strong>Objetivo:</strong> calcular n a partir de N.</strong><br><br>';
+          html += '<code>n = N / N_A</code><br><br>';
+          html += `n ≈ <strong>${nCalc.toFixed(3)} mol</strong>`;
+        }
+        molRes.innerHTML = html;
+      }
+    });
+  }
+
+  // Calculadora de concentração
+  const concTipo = document.getElementById('conc-tipo');
+  const concMassaSoluto = document.getElementById('conc-massa-soluto');
+  const concVolume = document.getElementById('conc-volume');
+  const concMassaTotal = document.getElementById('conc-massa-total');
+  const concBtn = document.getElementById('conc-calcular-btn');
+  const concRes = document.getElementById('conc-resultado');
+
+  if (concBtn && concTipo && concMassaSoluto && concVolume && concMassaTotal && concRes) {
+    concBtn.addEventListener('click', () => {
+      const tipo = concTipo.value;
+      const ms = parseFloat((concMassaSoluto.value || '').replace(',', '.'));
+      const V = parseFloat((concVolume.value || '').replace(',', '.'));
+      const mt = parseFloat((concMassaTotal.value || '').replace(',', '.'));
+
+      concRes.style.display = 'block';
+      let html = '';
+
+      if (tipo === 'molL' || tipo === 'gL') {
+        if (!isFinite(ms) || !isFinite(V)) {
+          concRes.innerHTML = '<span style="color:#ef4444">Informe a massa do soluto (g) e o volume da solução (L).</span>';
+          return;
+        }
+        const c = ms / V;
+        html += `<strong>Concentração em g/L${tipo === 'molL' ? ' (pode ser convertida para mol/L dividindo por M separadamente)' : ''}.</strong><br><br>`;
+        html += 'Fórmula:<br><code>C = m / V</code><br><br>';
+        html += `C = ${ms} g / ${V} L<br><br>`;
+        html += `C ≈ <strong>${c.toFixed(3)} g/L</strong>`;
+        concRes.innerHTML = html;
+      } else {
+        // ppm
+        if (!isFinite(ms) || !isFinite(mt)) {
+          concRes.innerHTML = '<span style="color:#ef4444">Para ppm, informe a massa do soluto (g) e a massa total da solução (g).</span>';
+          return;
+        }
+        const c = (ms / mt) * 1e6;
+        html += '<strong>Concentração em ppm (m/m).</strong><br><br>';
+        html += 'Fórmula:<br><code>ppm = (m_soluto / m_total) × 10⁶</code><br><br>';
+        html += `ppm = (${ms} g / ${mt} g) × 10⁶<br><br>`;
+        html += `ppm ≈ <strong>${c.toFixed(1)} ppm</strong>`;
+        concRes.innerHTML = html;
+      }
+    });
+  }
+
+  // Equilíbrio de reações simples
+  const eqInput = document.getElementById('eq-reacao');
+  const eqBtn = document.getElementById('eq-calcular-btn');
+  const eqRes = document.getElementById('eq-resultado');
+
+  function parseCompound(formula) {
+    const regex = /([A-Z][a-z]?)(\d*)/g;
+    const counts = {};
+    let m;
+    while ((m = regex.exec(formula)) !== null) {
+      const el = m[1];
+      const n = m[2] ? parseInt(m[2], 10) : 1;
+      counts[el] = (counts[el] || 0) + n;
+    }
+    return counts;
+  }
+
+  function isBalanced(reag, prod, coefR, coefP) {
+    const totals = {};
+    reag.forEach((f, i) => {
+      const counts = parseCompound(f);
+      const c = coefR[i];
+      Object.entries(counts).forEach(([el, n]) => {
+        totals[el] = (totals[el] || 0) + n * c;
+      });
+    });
+    prod.forEach((f, i) => {
+      const counts = parseCompound(f);
+      const c = coefP[i];
+      Object.entries(counts).forEach(([el, n]) => {
+        totals[el] = (totals[el] || 0) - n * c;
+      });
+    });
+    return Object.values(totals).every(v => v === 0);
+  }
+
+  if (eqBtn && eqInput && eqRes) {
+    eqBtn.addEventListener('click', () => {
+      const txt = eqInput.value.trim();
+      eqRes.style.display = 'block';
+
+      if (!txt || !txt.includes('->')) {
+        eqRes.innerHTML = '<span style="color:#ef4444">Digite a reação no formato: H2 + O2 -> H2O</span>';
+        return;
+      }
+
+      const [left, right] = txt.split('->').map(s => s.trim());
+      const reag = left.split('+').map(s => s.trim()).filter(Boolean);
+      const prod = right.split('+').map(s => s.trim()).filter(Boolean);
+
+      if (reag.length === 0 || prod.length === 0) {
+        eqRes.innerHTML = '<span style="color:#ef4444">Não consegui identificar reagentes e produtos. Verifique o formato.</span>';
+        return;
+      }
+
+      let best = null;
+      const maxCoef = 5;
+
+      const coefsR = [];
+      const coefsP = [];
+      function gerarCoefs(n, arr, lista) {
+        if (n === 0) {
+          lista.push(arr.slice());
+          return;
+        }
+        for (let i = 1; i <= maxCoef; i++) {
+          arr.push(i);
+          gerarCoefs(n - 1, arr, lista);
+          arr.pop();
+        }
+      }
+
+      gerarCoefs(reag.length, [], coefsR);
+      gerarCoefs(prod.length, [], coefsP);
+
+      outer: for (const cr of coefsR) {
+        for (const cp of coefsP) {
+          if (isBalanced(reag, prod, cr, cp)) {
+            best = { cr, cp };
+            break outer;
+          }
+        }
+      }
+
+      if (!best) {
+        eqRes.innerHTML = '<span style="color:#ef4444">Não consegui balancear automaticamente. Tente uma reação mais simples.</span>';
+        return;
+      }
+
+      const leftBal = reag.map((f, i) => `${best.cr[i] === 1 ? '' : best.cr[i]}${f}`).join(' + ');
+      const rightBal = prod.map((f, i) => `${best.cp[i] === 1 ? '' : best.cp[i]}${f}`).join(' + ');
+
+      let html = '<strong>Reação balanceada encontrada:</strong><br><br>';
+      html += `<code>${leftBal} → ${rightBal}</code><br><br>`;
+      html += 'Essa verificação usa contagem de átomos e procura coeficientes inteiros pequenos (até 5) para reagentes e produtos.';
+      eqRes.innerHTML = html;
+    });
+  }
+
   // Fórmula geral
   const tipoSelect = document.getElementById('formula-tipo-select');
   const nInput = document.getElementById('formula-n-input');
