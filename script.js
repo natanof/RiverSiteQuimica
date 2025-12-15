@@ -2729,17 +2729,30 @@ async function salvarPerfilAluno() {
 // Confirmação e exclusão de conta do aluno
 async function abrirConfirmacaoExcluirConta() {
   if (!window.firebaseAuth || !window.firebaseAuth.currentUser) {
-    alert('Você precisa estar logado para excluir sua conta.');
+    // Feedback simples dentro do modal, sem alert do navegador
+    const errorDiv = document.getElementById('aluno-perfil-error');
+    if (errorDiv) {
+      errorDiv.textContent = 'Você precisa estar logado para excluir sua conta.';
+      errorDiv.style.display = 'block';
+    }
     return;
   }
 
-  const confirmar = confirm(
-    'Tem certeza de que deseja excluir sua conta?\n\n' +
-    'Seu acesso, perfil e parte do seu progresso poderão ser removidos do sistema. ' +
-    'Essa ação não pode ser desfeita.'
-  );
+  const warningBox = document.getElementById('aluno-perfil-delete-warning');
+  if (warningBox) {
+    warningBox.innerHTML = '<strong>Confirme:</strong> clique novamente em "Excluir minha conta" para confirmar a exclusão definitiva.';
+    warningBox.style.display = 'block';
+  }
 
-  if (!confirmar) return;
+  // Segunda vez que clicar no botão, realmente exclui
+  const btn = document.getElementById('aluno-perfil-delete-btn');
+  if (!btn) return;
+
+  if (!btn.dataset.confirmed) {
+    btn.dataset.confirmed = 'true';
+    btn.textContent = 'Clique novamente para confirmar';
+    return;
+  }
 
   try {
     const user = window.firebaseAuth.currentUser;
@@ -2771,7 +2784,12 @@ async function abrirConfirmacaoExcluirConta() {
     // Exclui o usuário da autenticação
     await user.delete();
 
-    alert('Sua conta foi excluída com sucesso.');
+    // Mensagem de sucesso dentro do modal
+    const successDiv = document.getElementById('aluno-perfil-success');
+    if (successDiv) {
+      successDiv.textContent = 'Sua conta foi excluída com sucesso.';
+      successDiv.style.display = 'block';
+    }
 
     // Fecha modal de perfil e atualiza layout
     fecharModalPerfil();
@@ -2784,9 +2802,17 @@ async function abrirConfirmacaoExcluirConta() {
   } catch (error) {
     console.error('Erro ao excluir conta:', error);
     if (error.code === 'auth/requires-recent-login') {
-      alert('Por segurança, faça login novamente e tente excluir a conta de novo.');
+      const errorDiv = document.getElementById('aluno-perfil-error');
+      if (errorDiv) {
+        errorDiv.textContent = 'Por segurança, faça login novamente e tente excluir a conta de novo.';
+        errorDiv.style.display = 'block';
+      }
     } else {
-      alert('Não foi possível excluir sua conta agora. Tente novamente mais tarde.');
+      const errorDiv = document.getElementById('aluno-perfil-error');
+      if (errorDiv) {
+        errorDiv.textContent = 'Não foi possível excluir sua conta agora. Tente novamente mais tarde.';
+        errorDiv.style.display = 'block';
+      }
     }
   }
 }
