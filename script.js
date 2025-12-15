@@ -2503,8 +2503,6 @@ async function abrirModalEditarPerfil() {
   const modalAvatarIcon = document.getElementById('aluno-perfil-modal-avatar-icon');
   const deleteBtn = document.getElementById('aluno-perfil-delete-btn');
   const deleteWarning = document.getElementById('aluno-perfil-delete-warning');
-  const deleteBtn = document.getElementById('aluno-perfil-delete-btn');
-  const deleteWarning = document.getElementById('aluno-perfil-delete-warning');
   
   if (!modal) return;
   
