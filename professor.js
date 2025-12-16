@@ -283,10 +283,17 @@ async function selectProfessorTopic(topic) {
     'oxigenados': { bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.3)', active: 'linear-gradient(135deg, #10b981, #059669)' }
   };
   
-  ['alcanos', 'alcenos', 'alcinos', 'oxigenados'].forEach(t => {
-    const btn = document.getElementById('prof-topic-' + t);
-    if (btn) {
-      const colors = topicColors[t];
+  // Cores padrão para temas personalizados
+  const defaultCustomColor = { bg: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.3)', active: 'linear-gradient(135deg, #8b5cf6, #6366f1)' };
+  
+  // Atualiza todos os botões de tema
+  const allTopicButtons = document.querySelectorAll('.prof-topic-btn');
+  allTopicButtons.forEach(btn => {
+    const btnId = btn.id;
+    if (btnId && btnId.startsWith('prof-topic-')) {
+      const t = btnId.replace('prof-topic-', '');
+      const colors = topicColors[t] || defaultCustomColor;
+      
       if (t === topic) {
         btn.style.background = colors.active;
         btn.style.color = 'white';
@@ -294,14 +301,15 @@ async function selectProfessorTopic(topic) {
         btn.style.transform = 'scale(1.05)';
         btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
       } else {
-        btn.style.background = colors.bg;
+        btn.style.background = colors.bg || defaultCustomColor.bg;
         btn.style.color = 'var(--text-primary)';
-        btn.style.borderColor = colors.border;
+        btn.style.borderColor = colors.border || defaultCustomColor.border;
         btn.style.transform = 'scale(1)';
         btn.style.boxShadow = 'none';
       }
     }
   });
+  
   await loadProfessorQuestions();
 }
 
@@ -515,6 +523,490 @@ window.handleLogout = handleLogout;
 window.handleChangePassword = handleChangePassword;
 window.showChangePasswordModal = showChangePasswordModal;
 window.closeChangePasswordModal = closeChangePasswordModal;
+
+// Funções do Modal de Recuperação de Senha
+window.showRecoverPasswordModal = function() {
+  const modal = document.getElementById('recover-password-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    // Limpa campos e mensagens
+    const emailInput = document.getElementById('recover-email');
+    if (emailInput) emailInput.value = '';
+    const errorDiv = document.getElementById('recover-error');
+    const successDiv = document.getElementById('recover-success');
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (successDiv) successDiv.style.display = 'none';
+  }
+};
+
+window.closeRecoverPasswordModal = function() {
+  const modal = document.getElementById('recover-password-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.handleRecoverPassword = async function(event) {
+  event.preventDefault();
+  
+  if (!window.firebaseDb) {
+    alert('Erro: Firestore não disponível.');
+    return;
+  }
+  
+  const emailInput = document.getElementById('recover-email');
+  const errorDiv = document.getElementById('recover-error');
+  const successDiv = document.getElementById('recover-success');
+  
+  if (!emailInput) return;
+  
+  const email = emailInput.value.trim();
+  
+  // Validação básica
+  if (!email || !email.includes('@')) {
+    if (errorDiv) {
+      errorDiv.textContent = 'Por favor, digite um email válido.';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  try {
+    // Busca todos os professores no Firestore para encontrar o que tem este email
+    const professoresRef = window.firebaseDb.collection('professores');
+    const snapshot = await professoresRef.get();
+    
+    let professorEncontrado = null;
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.email && data.email.toLowerCase() === email.toLowerCase()) {
+        professorEncontrado = { username: doc.id, ...data };
+      }
+    });
+    
+    if (!professorEncontrado) {
+      if (errorDiv) {
+        errorDiv.textContent = 'Email não encontrado. Verifique se o email está correto e se foi vinculado ao seu perfil.';
+        errorDiv.style.display = 'block';
+      }
+      return;
+    }
+    
+    // Mostra a senha do professor (ou poderia enviar por email em produção)
+    if (successDiv) {
+      successDiv.innerHTML = `
+        <div style="margin-bottom:12px">
+          <strong>Email encontrado!</strong><br>
+          <span style="font-size:0.9rem">Usuário: <strong>${professorEncontrado.username}</strong></span>
+        </div>
+        <div style="padding:12px; background:rgba(37,99,235,0.1); border-radius:8px; border:1px solid rgba(37,99,235,0.2)">
+          <div style="font-size:0.85rem; color:var(--muted); margin-bottom:6px">Sua senha atual:</div>
+          <div style="font-size:1.2rem; font-weight:700; color:#2563eb; font-family:monospace; letter-spacing:2px">${professorEncontrado.password || 'Não definida'}</div>
+        </div>
+        <div style="margin-top:12px; padding:10px; background:rgba(251,191,36,0.1); border-radius:8px; border:1px solid rgba(251,191,36,0.3); font-size:0.85rem; color:#92400e">
+          ⚠️ Em produção, a senha seria enviada por email. Por segurança, altere sua senha após fazer login.
+        </div>
+      `;
+      successDiv.style.display = 'block';
+    }
+    
+    if (errorDiv) errorDiv.style.display = 'none';
+    
+  } catch (error) {
+    console.error('Erro ao recuperar senha:', error);
+    if (errorDiv) {
+      errorDiv.textContent = 'Erro ao buscar informações. Tente novamente.';
+      errorDiv.style.display = 'block';
+    }
+  }
+};
+
+// Funções do Modal de Recuperação de Senha
+window.showRecoverPasswordModal = function() {
+  const modal = document.getElementById('recover-password-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    // Limpa campos e mensagens
+    const emailInput = document.getElementById('recover-email');
+    if (emailInput) emailInput.value = '';
+    const errorDiv = document.getElementById('recover-error');
+    const successDiv = document.getElementById('recover-success');
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (successDiv) successDiv.style.display = 'none';
+  }
+};
+
+window.closeRecoverPasswordModal = function() {
+  const modal = document.getElementById('recover-password-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.handleRecoverPassword = async function(event) {
+  event.preventDefault();
+  
+  if (!window.firebaseDb) {
+    alert('Erro: Firestore não disponível.');
+    return;
+  }
+  
+  const emailInput = document.getElementById('recover-email');
+  const errorDiv = document.getElementById('recover-error');
+  const successDiv = document.getElementById('recover-success');
+  
+  if (!emailInput) return;
+  
+  const email = emailInput.value.trim();
+  
+  // Validação básica
+  if (!email || !email.includes('@')) {
+    if (errorDiv) {
+      errorDiv.textContent = 'Por favor, digite um email válido.';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  try {
+    // Busca todos os professores no Firestore para encontrar o que tem este email
+    const professoresRef = window.firebaseDb.collection('professores');
+    const snapshot = await professoresRef.get();
+    
+    let professorEncontrado = null;
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.email && data.email.toLowerCase() === email.toLowerCase()) {
+        professorEncontrado = { username: doc.id, ...data };
+      }
+    });
+    
+    if (!professorEncontrado) {
+      if (errorDiv) {
+        errorDiv.textContent = 'Email não encontrado. Verifique se o email está correto e se foi vinculado ao seu perfil.';
+        errorDiv.style.display = 'block';
+      }
+      return;
+    }
+    
+    // Mostra a senha do professor (ou poderia enviar por email em produção)
+    if (successDiv) {
+      successDiv.innerHTML = `
+        <div style="margin-bottom:12px">
+          <strong>Email encontrado!</strong><br>
+          <span style="font-size:0.9rem">Usuário: <strong>${professorEncontrado.username}</strong></span>
+        </div>
+        <div style="padding:12px; background:rgba(37,99,235,0.1); border-radius:8px; border:1px solid rgba(37,99,235,0.2)">
+          <div style="font-size:0.85rem; color:var(--muted); margin-bottom:6px">Sua senha atual:</div>
+          <div style="font-size:1.2rem; font-weight:700; color:#2563eb; font-family:monospace; letter-spacing:2px">${professorEncontrado.password || 'Não definida'}</div>
+        </div>
+        <div style="margin-top:12px; padding:10px; background:rgba(251,191,36,0.1); border-radius:8px; border:1px solid rgba(251,191,36,0.3); font-size:0.85rem; color:#92400e">
+          ⚠️ Em produção, a senha seria enviada por email. Por segurança, altere sua senha após fazer login.
+        </div>
+      `;
+      successDiv.style.display = 'block';
+    }
+    
+    if (errorDiv) errorDiv.style.display = 'none';
+    
+  } catch (error) {
+    console.error('Erro ao recuperar senha:', error);
+    if (errorDiv) {
+      errorDiv.textContent = 'Erro ao buscar informações. Tente novamente.';
+      errorDiv.style.display = 'block';
+    }
+  }
+};
+
+// Funções do Modal de Perfil do Professor
+window.showProfessorProfileModal = function() {
+  const modal = document.getElementById('professor-profile-modal');
+  if (!modal) return;
+  
+  // Carrega dados do perfil se existirem
+  if (currentProfessorUser && window.firebaseDb) {
+    const profRef = window.firebaseDb.collection('professores').doc(currentProfessorUser.username);
+    profRef.get().then(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+        const nomeInput = document.getElementById('prof-profile-nome');
+        const emailInput = document.getElementById('prof-profile-email');
+        const avatarImg = document.getElementById('prof-profile-avatar-img');
+        const avatarPreview = document.getElementById('prof-profile-avatar-preview');
+        
+        if (nomeInput && data.nome) nomeInput.value = data.nome;
+        if (emailInput && data.email) emailInput.value = data.email;
+        if (avatarImg && data.avatarUrl) {
+          avatarImg.src = data.avatarUrl;
+          avatarImg.style.display = 'block';
+          if (avatarPreview) {
+            const svg = avatarPreview.querySelector('svg');
+            if (svg) svg.style.display = 'none';
+          }
+        }
+      }
+    }).catch(err => {
+      console.error('Erro ao carregar perfil:', err);
+    });
+  }
+  
+  modal.style.display = 'flex';
+};
+
+window.closeProfessorProfileModal = function() {
+  const modal = document.getElementById('professor-profile-modal');
+  if (modal) modal.style.display = 'none';
+  
+  // Limpa mensagens de erro/sucesso
+  const errorDiv = document.getElementById('prof-profile-error');
+  const successDiv = document.getElementById('prof-profile-success');
+  if (errorDiv) errorDiv.style.display = 'none';
+  if (successDiv) successDiv.style.display = 'none';
+};
+
+window.previewProfessorAvatar = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const avatarImg = document.getElementById('prof-profile-avatar-img');
+    const avatarPreview = document.getElementById('prof-profile-avatar-preview');
+    if (avatarImg && avatarPreview) {
+      avatarImg.src = e.target.result;
+      avatarImg.style.display = 'block';
+      const svg = avatarPreview.querySelector('svg');
+      if (svg) svg.style.display = 'none';
+    }
+  };
+  reader.readAsDataURL(file);
+};
+
+window.handleProfessorProfileSave = async function(event) {
+  event.preventDefault();
+  
+  if (!currentProfessorUser || !window.firebaseDb) {
+    alert('Erro: Usuário não autenticado ou Firestore não disponível.');
+    return;
+  }
+  
+  const nomeInput = document.getElementById('prof-profile-nome');
+  const emailInput = document.getElementById('prof-profile-email');
+  const avatarInput = document.getElementById('prof-profile-avatar-input');
+  const errorDiv = document.getElementById('prof-profile-error');
+  const successDiv = document.getElementById('prof-profile-success');
+  
+  if (!nomeInput || !emailInput) return;
+  
+  const nome = nomeInput.value.trim();
+  const email = emailInput.value.trim();
+  
+  // Validação básica
+  if (!nome) {
+    if (errorDiv) {
+      errorDiv.textContent = 'Por favor, preencha o nome completo.';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  if (!email || !email.includes('@')) {
+    if (errorDiv) {
+      errorDiv.textContent = 'Por favor, digite um email válido.';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  try {
+    const profRef = window.firebaseDb.collection('professores').doc(currentProfessorUser.username);
+    const updateData = {
+      nome: nome,
+      email: email,
+      atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    // Se há uma imagem selecionada, converte para base64
+    if (avatarInput && avatarInput.files[0]) {
+      const file = avatarInput.files[0];
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        updateData.avatarUrl = e.target.result; // Base64
+        await profRef.update(updateData);
+        
+        // Atualiza o usuário atual
+        currentProfessorUser = { ...currentProfessorUser, ...updateData };
+        
+        if (successDiv) {
+          successDiv.textContent = 'Perfil salvo com sucesso!';
+          successDiv.style.display = 'block';
+        }
+        
+        setTimeout(() => {
+          closeProfessorProfileModal();
+        }, 1500);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Sem imagem nova, apenas atualiza os outros dados
+      await profRef.update(updateData);
+      
+      // Atualiza o usuário atual
+      currentProfessorUser = { ...currentProfessorUser, ...updateData };
+      
+      if (successDiv) {
+        successDiv.textContent = 'Perfil salvo com sucesso!';
+        successDiv.style.display = 'block';
+      }
+      
+      setTimeout(() => {
+        closeProfessorProfileModal();
+      }, 1500);
+    }
+  } catch (error) {
+    console.error('Erro ao salvar perfil:', error);
+    if (errorDiv) {
+      errorDiv.textContent = 'Erro ao salvar perfil. Tente novamente.';
+      errorDiv.style.display = 'block';
+    }
+  }
+};
+
+// Funções do Modal de Adicionar Tema
+window.showAddTopicModal = function() {
+  const modal = document.getElementById('add-topic-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    // Limpa campos
+    const nameInput = document.getElementById('new-topic-name');
+    const iconInput = document.getElementById('new-topic-icon');
+    if (nameInput) nameInput.value = '';
+    if (iconInput) iconInput.value = '';
+    // Limpa mensagens
+    const errorDiv = document.getElementById('add-topic-error');
+    const successDiv = document.getElementById('add-topic-success');
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (successDiv) successDiv.style.display = 'none';
+  }
+};
+
+window.closeAddTopicModal = function() {
+  const modal = document.getElementById('add-topic-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.handleAddTopic = async function(event) {
+  event.preventDefault();
+  
+  if (!currentProfessorUser || !window.firebaseDb) {
+    alert('Erro: Usuário não autenticado ou Firestore não disponível.');
+    return;
+  }
+  
+  const nameInput = document.getElementById('new-topic-name');
+  const iconInput = document.getElementById('new-topic-icon');
+  const errorDiv = document.getElementById('add-topic-error');
+  const successDiv = document.getElementById('add-topic-success');
+  
+  if (!nameInput || !iconInput) return;
+  
+  const topicName = nameInput.value.trim().toLowerCase();
+  const topicIcon = iconInput.value.trim() || '📚';
+  const topicDisplayName = nameInput.value.trim();
+  
+  // Validação
+  if (!topicName) {
+    if (errorDiv) {
+      errorDiv.textContent = 'Por favor, digite o nome do tema.';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  // Verifica se o tema já existe (temas padrão)
+  const defaultTopics = ['alcanos', 'alcenos', 'alcinos', 'oxigenados'];
+  if (defaultTopics.includes(topicName)) {
+    if (errorDiv) {
+      errorDiv.textContent = 'Este tema já existe. Use um nome diferente.';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  try {
+    // Salva o tema no Firestore
+    const topicsRef = window.firebaseDb.collection('temas_personalizados');
+    const topicDoc = await topicsRef.doc(topicName).get();
+    
+    if (topicDoc.exists) {
+      if (errorDiv) {
+        errorDiv.textContent = 'Este tema já foi criado. Escolha outro nome.';
+        errorDiv.style.display = 'block';
+      }
+      return;
+    }
+    
+    await topicsRef.doc(topicName).set({
+      nome: topicDisplayName,
+      nomeId: topicName,
+      icon: topicIcon,
+      criadoPor: currentProfessorUser.username,
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Adiciona o botão do tema na interface
+    addTopicButtonToGrid(topicName, topicDisplayName, topicIcon);
+    
+    if (successDiv) {
+      successDiv.textContent = 'Tema criado com sucesso!';
+      successDiv.style.display = 'block';
+    }
+    
+    setTimeout(() => {
+      closeAddTopicModal();
+    }, 1500);
+  } catch (error) {
+    console.error('Erro ao criar tema:', error);
+    if (errorDiv) {
+      errorDiv.textContent = 'Erro ao criar tema. Tente novamente.';
+      errorDiv.style.display = 'block';
+    }
+  }
+};
+
+// Função para adicionar botão de tema na grade
+function addTopicButtonToGrid(topicId, topicName, topicIcon) {
+  const grid = document.getElementById('prof-topics-grid');
+  if (!grid) return;
+  
+  // Verifica se o botão já existe
+  if (document.getElementById(`prof-topic-${topicId}`)) return;
+  
+  const button = document.createElement('button');
+  button.className = 'btn ghost prof-topic-btn';
+  button.id = `prof-topic-${topicId}`;
+  button.onclick = () => selectProfessorTopic(topicId);
+  button.style.cssText = 'padding:16px; border:2px solid rgba(139,92,246,0.2); border-radius:12px; transition:all 0.3s; text-align:center; font-weight:600';
+  button.innerHTML = `
+    <div style="font-size:1.5rem; margin-bottom:8px">${topicIcon}</div>
+    <div>${topicName}</div>
+  `;
+  
+  grid.appendChild(button);
+}
+
+// Carrega temas personalizados ao iniciar
+async function loadCustomTopics() {
+  if (!window.firebaseDb) return;
+  
+  try {
+    const topicsRef = window.firebaseDb.collection('temas_personalizados');
+    const snapshot = await topicsRef.get();
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      addTopicButtonToGrid(data.nomeId, data.nome, data.icon || '📚');
+    });
+  } catch (error) {
+    console.error('Erro ao carregar temas personalizados:', error);
+  }
+}
 
 // Estatísticas do professor (Firestore)
 async function carregarAlunosParaSelect() {
@@ -1219,6 +1711,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           updateProfessorLayout(true);
           carregarAlunosParaSelect();
           configurarListenersTempoReal();
+          loadCustomTopics();
           return;
         }
       } catch (err) {
@@ -1238,6 +1731,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     carregarAlunosParaSelect();
     // Configura listeners em tempo real
     configurarListenersTempoReal();
+    // Carrega temas personalizados
+    loadCustomTopics();
   }
 });
 

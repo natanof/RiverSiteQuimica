@@ -516,6 +516,44 @@ async function mountQuizToContainer(topic, containerId){
     updateProgress();
     return;
   }
+  // Calcula o progresso do quiz atual
+  const answeredCount = state.userAnswers[topic].length;
+  const correctCount = state.userAnswers[topic].filter(x => x.correct).length;
+  const totalQuestions = questions.length;
+  const progressPercent = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+  const accuracyPercent = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+  
+  // Cria elemento de progresso do quiz
+  const progressContainer = document.createElement('div');
+  progressContainer.style.cssText = 'margin: 16px 0; padding: 16px; background: linear-gradient(135deg, rgba(37,99,235,0.05), rgba(6,182,212,0.05)); border-radius: 12px; border: 1px solid rgba(37,99,235,0.1);';
+  progressContainer.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+      <div style="flex: 1; min-width: 200px;">
+        <div style="font-size: 0.9rem; color: var(--muted); margin-bottom: 4px;">Progresso do Quiz</div>
+        <div style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">
+          Questão ${answeredCount + 1} de ${totalQuestions}
+        </div>
+      </div>
+      <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div style="text-align: center;">
+          <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 4px;">Acertos</div>
+          <div style="font-size: 1.1rem; font-weight: 600; color: var(--success);">
+            ${correctCount}/${answeredCount}
+          </div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 4px;">Precisão</div>
+          <div style="font-size: 1.1rem; font-weight: 600; color: ${accuracyPercent >= 70 ? 'var(--success)' : accuracyPercent >= 50 ? 'var(--accent1)' : 'var(--danger)'};">
+            ${answeredCount > 0 ? accuracyPercent : 0}%
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden;">
+      <div style="width: ${progressPercent}%; height: 100%; background: linear-gradient(90deg, ${progressPercent > 66 ? 'var(--success)' : progressPercent > 33 ? 'var(--accent1)' : 'var(--danger)'} 0%, ${progressPercent > 66 ? 'rgba(34,197,94,0.8)' : progressPercent > 33 ? 'rgba(37,99,235,0.8)' : 'rgba(239,68,68,0.8)'} 100%); transition: width 0.3s ease; border-radius: 4px;"></div>
+    </div>
+  `;
+  
   const qObj = questions[qIndex];
   const qBlock = document.createElement('div');
   qBlock.className = 'question-row';
@@ -566,35 +604,84 @@ async function mountQuizToContainer(topic, containerId){
     }
     state.userAnswers[topic].push({ selected: null, correct: false, skipped:true });
     await salvarProgressoAluno();
+    
+    // Atualiza o progresso do quiz
+    const container = document.getElementById(containerId);
+    if (container && container.updateQuizProgress) {
+      await container.updateQuizProgress();
+    }
+    
+    // Desabilita as opções
+    const optionsEls = Array.from(qBlock.querySelectorAll('.option'));
+    optionsEls.forEach((optEl) => {
+      optEl.classList.add('disabled');
+      optEl.style.cursor = 'default';
+      const radio = optEl.querySelector('input[type=radio]');
+      if(radio) radio.disabled = true;
+    });
+    
+    // Mostra feedback de questão pulada
+    const existingFeedback = qBlock.querySelector('.quiz-feedback');
+    if (existingFeedback) {
+      existingFeedback.remove();
+    }
+    const feedback = document.createElement('div');
+    feedback.className = 'note quiz-feedback';
+    feedback.innerHTML = `<p style="margin:4px 0"><strong>Questão pulada.</strong> Você pode revisar o conteúdo antes de continuar.</p>`;
+    qBlock.appendChild(feedback);
+    
+    // Oculta o botão "Enviar resposta" e "Pular", mostra o botão "Próximo"
+    const sendBtn = qBlock.querySelector('.btn.primary');
+    if (sendBtn && sendBtn.textContent === 'Enviar resposta') {
+      sendBtn.style.display = 'none';
+    }
+    skip.style.display = 'none';
+    
+    // Mostra e habilita o botão "Próximo"
+    const nextBtn = document.getElementById(`next-btn-${topic}-${qIndex}`);
+    if (nextBtn) {
+      nextBtn.style.display = 'inline-flex';
+      nextBtn.disabled = false;
+    }
+    
+    updateProgress();
+  };
+  // Botão "Próximo" - inicialmente oculto e desabilitado
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn primary';
+  nextBtn.textContent = 'Próximo';
+  nextBtn.id = `next-btn-${topic}-${qIndex}`;
+  nextBtn.style.display = 'none';
+  nextBtn.disabled = true;
+  nextBtn.onclick = async () => {
     const questions = await getCombinedQuestions(topic);
     const isQuizComplete = state.userAnswers[topic].length >= questions.length;
     if (containerId === 'quiz-geral-container' && isQuizComplete) {
-      // Se um tópico específico foi selecionado, mostra resumo
+      // Se um tópico específico foi selecionado, mostra resumo e opção de voltar
       if (state.selectedQuizTopic && state.selectedQuizTopic !== 'todos') {
-        setTimeout(async () => {
-          const container = document.getElementById(containerId);
-          if (container) {
-            const questions = await getCombinedQuestions(topic);
-            const corrects = state.userAnswers[topic].filter(x => x.correct).length;
-            const summary = document.createElement('div');
-            summary.innerHTML = `
-              <h4 style="margin:0 0 10px 0">Quiz de ${capitalize(topic)} Concluído!</h4>
-              <div class="note">
-                <p style="margin:6px 0"><strong>Resultado:</strong></p>
-                <p style="margin:4px 0">Acertos: <strong>${corrects}</strong> de ${questions.length}</p>
-                <p style="margin:4px 0">Porcentagem: <strong>${Math.round((corrects/questions.length)*100)}%</strong></p>
-              </div>
-              <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap">
-                <button class="btn primary" onclick="(async () => { await resetQuiz('${topic}'); await mountGeneralQuiz('${topic}'); })()">Refazer Quiz</button>
-                <button class="btn ghost" onclick="backToTopicSelection()">Escolher Outro Tópico</button>
-              </div>
-            `;
-            container.innerHTML = '';
-            container.appendChild(summary);
-          }
-        }, 500);
+        const container = document.getElementById(containerId);
+        if (container) {
+          const questions = await getCombinedQuestions(topic);
+          const corrects = state.userAnswers[topic].filter(x => x.correct).length;
+          const summary = document.createElement('div');
+          summary.innerHTML = `
+            <h4 style="margin:0 0 10px 0">Quiz de ${capitalize(topic)} Concluído!</h4>
+            <div class="note">
+              <p style="margin:6px 0"><strong>Resultado:</strong></p>
+              <p style="margin:4px 0">Acertos: <strong>${corrects}</strong> de ${questions.length}</p>
+              <p style="margin:4px 0">Porcentagem: <strong>${Math.round((corrects/questions.length)*100)}%</strong></p>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap">
+              <button class="btn primary" onclick="(async () => { await resetQuiz('${topic}'); await mountGeneralQuiz('${topic}'); })()">Refazer Quiz</button>
+              <button class="btn ghost" onclick="backToTopicSelection()">Escolher Outro Tópico</button>
+            </div>
+          `;
+          container.innerHTML = '';
+          container.appendChild(summary);
+        }
       } else {
-        setTimeout(async () => { await mountGeneralQuiz('todos') }, 2000);
+        // Modo sequencial (todos os temas)
+        await mountGeneralQuiz('todos');
       }
     } else if (containerId === 'quiz-geral-container') {
       await mountQuizToContainer(topic, containerId);
@@ -602,16 +689,80 @@ async function mountQuizToContainer(topic, containerId){
       await mountQuizToContainer(topic, containerId);
     }
   };
+  
   btns.appendChild(send);
   btns.appendChild(skip);
+  btns.appendChild(nextBtn);
   qBlock.appendChild(btns);
   const resultStrip = document.createElement('div');
   resultStrip.className = 'result-strip';
   qBlock.appendChild(resultStrip);
+  // Função para atualizar o progresso do quiz
+  const updateQuizProgress = async () => {
+    const questions = await getCombinedQuestions(topic);
+    const answeredCount = state.userAnswers[topic].length;
+    const correctCount = state.userAnswers[topic].filter(x => x.correct).length;
+    const totalQuestions = questions.length;
+    const progressPercent = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+    const accuracyPercent = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+    
+    if (progressContainer) {
+      progressContainer.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div style="flex: 1; min-width: 200px;">
+            <div style="font-size: 0.9rem; color: var(--muted); margin-bottom: 4px;">Progresso do Quiz</div>
+            <div style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">
+              Questão ${answeredCount + 1} de ${totalQuestions}
+            </div>
+          </div>
+          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="text-align: center;">
+              <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 4px;">Acertos</div>
+              <div style="font-size: 1.1rem; font-weight: 600; color: var(--success);">
+                ${correctCount}/${answeredCount}
+              </div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 4px;">Precisão</div>
+              <div style="font-size: 1.1rem; font-weight: 600; color: ${accuracyPercent >= 70 ? 'var(--success)' : accuracyPercent >= 50 ? 'var(--accent1)' : 'var(--danger)'};">
+                ${answeredCount > 0 ? accuracyPercent : 0}%
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden;">
+          <div style="width: ${progressPercent}%; height: 100%; background: linear-gradient(90deg, ${progressPercent > 66 ? 'var(--success)' : progressPercent > 33 ? 'var(--accent1)' : 'var(--danger)'} 0%, ${progressPercent > 66 ? 'rgba(34,197,94,0.8)' : progressPercent > 33 ? 'rgba(37,99,235,0.8)' : 'rgba(239,68,68,0.8)'} 100%); transition: width 0.3s ease; border-radius: 4px;"></div>
+        </div>
+      `;
+    }
+  };
+  
+  // Armazena a função de atualização no container para uso posterior
+  container.dataset.updateQuizProgress = 'true';
+  container.updateQuizProgress = updateQuizProgress;
+  
+  // Botão de Acessar Tabela Periódica (acima do quiz)
+  const periodicTableBtn = document.createElement('div');
+  periodicTableBtn.style.cssText = 'margin: 0 0 20px 0; display: flex; justify-content: center;';
+  periodicTableBtn.innerHTML = `
+    <a id="periodic-table-link" href="#" target="_blank" 
+       class="btn primary" 
+       style="display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; font-size: 1rem; font-weight: 600; text-decoration: none; border-radius: 12px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(37,99,235,0.2);"
+       onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(37,99,235,0.3)'"
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(37,99,235,0.2)'">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M2 4v2h2V4zm18 0v2h2V4zM2 7v2h2V7zm3 0v2h2V7zm9 0v2h2V7zm3 0v2h2V7zm3 0v2h2V7zM2 10v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zM2 13v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zM5 17v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2zm3 0v2h2v-2z"/>
+      </svg>
+      <span>Acessar Tabela Periódica</span>
+    </a>
+  `;
+  
   const title = document.createElement('h4');
   title.textContent = 'Quiz — ' + capitalize(topic);
   title.style.margin = '0 0 10px 0';
-  container.insertBefore(title, container.firstChild);
+  container.insertBefore(periodicTableBtn, container.firstChild);
+  container.insertBefore(title, periodicTableBtn.nextSibling);
+  container.appendChild(progressContainer);
   container.appendChild(qBlock);
   updateProgress();
 }
@@ -700,6 +851,11 @@ async function submitAnswer(topic, qIndex, containerId){
   const isCorrect = (selectedIndex === correctIndex);
   state.userAnswers[topic].push({ selected: selectedIndex, correct: isCorrect, skipped:false });
   await salvarProgressoAluno();
+  
+  // Atualiza o progresso do quiz
+  if (container.updateQuizProgress) {
+    await container.updateQuizProgress();
+  }
   optionsEls.forEach((optEl, i) => {
     optEl.classList.add('disabled');
     optEl.style.cursor = 'default';
@@ -788,42 +944,23 @@ async function submitAnswer(topic, qIndex, containerId){
     logEvento('quiz_resposta', detalhe);
   } catch (e) {}
   updateProgress();
-  const questions = await getCombinedQuestions(topic);
-  const isQuizComplete = state.userAnswers[topic].length >= questions.length;
-  setTimeout(async ()=> {
-    if (containerId === 'quiz-geral-container' && isQuizComplete) {
-      // Se um tópico específico foi selecionado, mostra resumo e opção de voltar
-      if (state.selectedQuizTopic && state.selectedQuizTopic !== 'todos') {
-        const container = document.getElementById(containerId);
-        if (container) {
-          const questions = await getCombinedQuestions(topic);
-          const corrects = state.userAnswers[topic].filter(x => x.correct).length;
-          const summary = document.createElement('div');
-          summary.innerHTML = `
-            <h4 style="margin:0 0 10px 0">Quiz de ${capitalize(topic)} Concluído!</h4>
-            <div class="note">
-              <p style="margin:6px 0"><strong>Resultado:</strong></p>
-              <p style="margin:4px 0">Acertos: <strong>${corrects}</strong> de ${questions.length}</p>
-              <p style="margin:4px 0">Porcentagem: <strong>${Math.round((corrects/questions.length)*100)}%</strong></p>
-            </div>
-            <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap">
-              <button class="btn primary" onclick="resetQuiz('${topic}'); mountGeneralQuiz('${topic}')">Refazer Quiz</button>
-              <button class="btn ghost" onclick="backToTopicSelection()">Escolher Outro Tópico</button>
-            </div>
-          `;
-          container.innerHTML = '';
-          container.appendChild(summary);
-        }
-      } else {
-        // Modo sequencial (todos os temas)
-        setTimeout(async () => { await mountGeneralQuiz('todos') }, 2000);
-      }
-    } else if (containerId === 'quiz-geral-container') {
-      await mountQuizToContainer(topic, containerId);
-    } else {
-      await mountQuizToContainer(topic, containerId);
-    }
-  }, 2500);
+  
+  // Oculta o botão "Enviar resposta" e mostra o botão "Próximo"
+  const sendBtn = qBlock.querySelector('.btn.primary');
+  if (sendBtn && sendBtn.textContent === 'Enviar resposta') {
+    sendBtn.style.display = 'none';
+  }
+  const skipBtn = qBlock.querySelector('.btn.ghost');
+  if (skipBtn && skipBtn.textContent === 'Pular') {
+    skipBtn.style.display = 'none';
+  }
+  
+  // Mostra e habilita o botão "Próximo"
+  const nextBtn = document.getElementById(`next-btn-${topic}-${qIndex}`);
+  if (nextBtn) {
+    nextBtn.style.display = 'inline-flex';
+    nextBtn.disabled = false;
+  }
 }
 function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1) }
 document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -1473,19 +1610,15 @@ async function useLocalAIFallback(question, context, loadingMsg) {
 
 function openAIChat() {
   const widget = document.getElementById('ai-chat-widget');
-  const toggle = document.getElementById('ai-chat-toggle');
-  if (!widget || !toggle) return;
+  if (!widget) return;
   widget.style.display = 'block';
-  toggle.style.display = 'none';
   aiChatVisible = true;
 }
 
 function closeAIChat() {
   const widget = document.getElementById('ai-chat-widget');
-  const toggle = document.getElementById('ai-chat-toggle');
-  if (!widget || !toggle) return;
+  if (!widget) return;
   widget.style.display = 'none';
-  toggle.style.display = 'flex';
   aiChatVisible = false;
 }
 
@@ -2216,17 +2349,63 @@ function initAlunoAuth() {
   const userInfo = document.getElementById('aluno-user-info');
   const userName = document.getElementById('aluno-user-name');
 
+  // Função auxiliar para atualizar a UI de autenticação
+  const updateAuthUI = (isLoggedIn, user = null) => {
+    const currentLoginBtn = document.getElementById('aluno-login-google-btn');
+    const currentUserInfo = document.getElementById('aluno-user-info');
+    const currentUserName = document.getElementById('aluno-user-name');
+    
+    if (isLoggedIn) {
+      // Oculta botão de login de forma robusta
+      if (currentLoginBtn) {
+        currentLoginBtn.style.display = 'none';
+        currentLoginBtn.style.visibility = 'hidden';
+        currentLoginBtn.style.opacity = '0';
+        currentLoginBtn.style.position = 'absolute';
+        currentLoginBtn.style.width = '0';
+        currentLoginBtn.style.height = '0';
+        currentLoginBtn.style.overflow = 'hidden';
+      }
+      // Mostra informações do usuário
+      if (currentUserInfo) {
+        currentUserInfo.style.display = 'flex';
+        currentUserInfo.style.visibility = 'visible';
+        currentUserInfo.style.opacity = '1';
+      }
+      // Atualiza nome do usuário
+      if (currentUserName && user) {
+        currentUserName.textContent = user.displayName || user.email || 'Usuário';
+      }
+    } else {
+      // Mostra botão de login
+      if (currentLoginBtn) {
+        currentLoginBtn.style.display = 'flex';
+        currentLoginBtn.style.visibility = 'visible';
+        currentLoginBtn.style.opacity = '1';
+        currentLoginBtn.style.position = '';
+        currentLoginBtn.style.width = '';
+        currentLoginBtn.style.height = '';
+        currentLoginBtn.style.overflow = '';
+      }
+      // Oculta informações do usuário
+      if (currentUserInfo) {
+        currentUserInfo.style.display = 'none';
+        currentUserInfo.style.visibility = 'hidden';
+        currentUserInfo.style.opacity = '0';
+      }
+    }
+  };
+
   // Verifica se já está autenticado
   window.firebaseAuth.onAuthStateChanged(async (user) => {
     if (user) {
       // Guarda usuário atual globalmente para uso em outras partes (ex: avatar no chat de IA)
       window.currentAlunoUser = user;
-      // Usuário logado
-      if (loginBtn) loginBtn.style.display = 'none';
-      if (userInfo) userInfo.style.display = 'flex';
-      if (userName) {
-        userName.textContent = user.displayName || user.email || 'Usuário';
-      }
+      // Usuário logado - atualiza UI imediatamente
+      updateAuthUI(true, user);
+      
+      // Atualiza o avatar do usuário
+      atualizarAvatarUsuario(user);
       
       // Atualiza o avatar do usuário
       atualizarAvatarUsuario(user);
@@ -2258,9 +2437,8 @@ function initAlunoAuth() {
     } else {
       // Remove referência global do usuário
       window.currentAlunoUser = null;
-      // Usuário não logado - limpa o estado local mas mantém no Firestore
-      if (loginBtn) loginBtn.style.display = 'flex';
-      if (userInfo) userInfo.style.display = 'none';
+      // Usuário não logado - atualiza UI e limpa o estado local mas mantém no Firestore
+      updateAuthUI(false);
       
       // Limpa o estado local (mas o progresso permanece no Firestore)
       state.userAnswers = { alcanos: [], alcenos: [], alcinos: [], oxigenados: [] };
@@ -2285,7 +2463,23 @@ function initAlunoAuth() {
 
   // Botão de login
   if (loginBtn) {
-    loginBtn.addEventListener('click', async () => {
+    // Remove listeners anteriores para evitar duplicação
+    const newLoginBtn = loginBtn.cloneNode(true);
+    loginBtn.parentNode.replaceChild(newLoginBtn, loginBtn);
+    
+    // Flag para evitar múltiplas chamadas simultâneas
+    let isLoggingIn = false;
+    
+    newLoginBtn.addEventListener('click', async () => {
+      // Previne múltiplas chamadas simultâneas
+      if (isLoggingIn) {
+        console.log('Login já em andamento...');
+        return;
+      }
+      
+      isLoggingIn = true;
+      newLoginBtn.disabled = true;
+      
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.addScope('profile');
@@ -2295,6 +2489,9 @@ function initAlunoAuth() {
         try {
           const result = await window.firebaseAuth.signInWithPopup(provider);
           console.log('Login bem-sucedido:', result.user);
+          
+          // Oculta o botão de login imediatamente usando a função auxiliar
+          updateAuthUI(true, result.user);
           
           // Verifica e completa perfil se necessário
           await verificarECompletarPerfil(result.user);
@@ -2311,28 +2508,29 @@ function initAlunoAuth() {
           
           // Atualiza o avatar
           atualizarAvatarUsuario(result.user);
+          
+          isLoggingIn = false;
+          newLoginBtn.disabled = false;
         } catch (popupError) {
           // Se popup falhar (bloqueado ou outro erro), usa redirect
           console.log('Popup bloqueado ou falhou, usando redirect...', popupError);
           
-          // Verifica se é erro de popup bloqueado
-          if (popupError.code === 'auth/popup-blocked' || 
-              popupError.code === 'auth/popup-closed-by-user' ||
-              popupError.message?.includes('popup')) {
-            // Usa redirect que é mais confiável
-            await window.firebaseAuth.signInWithRedirect(provider);
-            // A página será redirecionada, então não precisa fazer mais nada aqui
-            return;
-          } else {
-            // Outro tipo de erro, tenta redirect mesmo assim
-            await window.firebaseAuth.signInWithRedirect(provider);
-            return;
-          }
+          // Usa redirect que é mais confiável (chama apenas uma vez)
+          await window.firebaseAuth.signInWithRedirect(provider);
+          // A página será redirecionada, então não precisa fazer mais nada aqui
+          return;
         }
       } catch (error) {
         console.error('Erro ao fazer login:', error);
-        const errorMessage = error.message || 'Erro desconhecido';
-        alert(`Erro ao fazer login com Google: ${errorMessage}\n\nVerifique se:\n- O domínio está autorizado no Firebase Console\n- Os popups não estão bloqueados\n- A conexão com a internet está funcionando`);
+        isLoggingIn = false;
+        newLoginBtn.disabled = false;
+        
+        // Não mostra alerta se for erro de redirect (a página será redirecionada)
+        if (error.code !== 'auth/redirect-cancelled-by-user' && 
+            error.code !== 'auth/popup-closed-by-user') {
+          const errorMessage = error.message || 'Erro desconhecido';
+          alert(`Erro ao fazer login com Google: ${errorMessage}\n\nVerifique se:\n- O domínio está autorizado no Firebase Console\n- Os popups não estão bloqueados\n- A conexão com a internet está funcionando`);
+        }
       }
     });
   }
@@ -2342,6 +2540,9 @@ function initAlunoAuth() {
     if (result.credential && result.user) {
       // Login bem-sucedido via redirect
       console.log('Login bem-sucedido via redirect:', result.user);
+      
+      // Oculta o botão de login imediatamente usando a função auxiliar
+      updateAuthUI(true, result.user);
       
       // Verifica e completa perfil se necessário
       await verificarECompletarPerfil(result.user);
@@ -2370,6 +2571,21 @@ function initAlunoAuth() {
       console.error('Erro no redirect:', error);
     }
   });
+  
+  // Verifica o estado inicial de autenticação quando a página carrega
+  const checkInitialAuthState = () => {
+    const currentUser = window.firebaseAuth?.currentUser;
+    if (currentUser) {
+      // Usuário já está logado, atualiza UI
+      updateAuthUI(true, currentUser);
+      atualizarAvatarUsuario(currentUser);
+    }
+  };
+  
+  // Verifica o estado inicial imediatamente e também após um pequeno delay
+  checkInitialAuthState();
+  setTimeout(checkInitialAuthState, 100);
+  setTimeout(checkInitialAuthState, 500);
   
   // Configura o formulário de perfil
   const perfilForm = document.getElementById('aluno-perfil-form');
@@ -2559,17 +2775,40 @@ async function abrirModalEditarPerfil() {
     successDiv.textContent = '';
   }
 
+  // Garante que os campos estejam desabilitados e com estilo visual apropriado
+  if (nomeInput) {
+    nomeInput.disabled = true;
+    nomeInput.readOnly = true;
+    nomeInput.style.pointerEvents = 'none';
+    nomeInput.style.opacity = '0.7';
+    nomeInput.style.cursor = 'not-allowed';
+    nomeInput.style.background = 'rgba(241,245,249,0.8)';
+    nomeInput.style.borderColor = 'rgba(148,163,184,0.3)';
+    nomeInput.style.color = '#64748b';
+  }
+  if (turmaInput) {
+    turmaInput.disabled = true;
+    turmaInput.readOnly = true;
+    turmaInput.style.pointerEvents = 'none';
+    turmaInput.style.opacity = '0.7';
+    turmaInput.style.cursor = 'not-allowed';
+    turmaInput.style.background = 'rgba(241,245,249,0.8)';
+    turmaInput.style.borderColor = 'rgba(148,163,184,0.3)';
+    turmaInput.style.color = '#64748b';
+  }
+
+  // Oculta o botão "Salvar Alterações" no modo editar
+  const saveBtn = document.getElementById('aluno-perfil-save-btn');
+  if (saveBtn) {
+    saveBtn.style.display = 'none';
+  }
+
   // Mostra opção de excluir conta apenas no modo "editar perfil"
   if (deleteBtn) deleteBtn.style.display = 'flex';
   if (deleteWarning) deleteWarning.style.display = 'block';
   
   // Mostra o modal
   modal.style.display = 'flex';
-  
-  // Foca no primeiro campo
-  if (nomeInput) {
-    setTimeout(() => nomeInput.focus(), 100);
-  }
 }
 
 // Função para mostrar modal de perfil (versão original para primeiro acesso)
@@ -2582,6 +2821,8 @@ function mostrarModalPerfil(user) {
   const subtitleEl = document.getElementById('aluno-perfil-modal-subtitle');
   const modalAvatarImg = document.getElementById('aluno-perfil-modal-avatar-img');
   const modalAvatarIcon = document.getElementById('aluno-perfil-modal-avatar-icon');
+  const deleteBtn = document.getElementById('aluno-perfil-delete-btn');
+  const deleteWarning = document.getElementById('aluno-perfil-delete-warning');
   
   if (modal) {
     // Atualiza título para primeiro acesso
@@ -2598,6 +2839,34 @@ function mostrarModalPerfil(user) {
     } else {
       if (modalAvatarImg) modalAvatarImg.style.display = 'none';
       if (modalAvatarIcon) modalAvatarIcon.style.display = 'block';
+    }
+    
+    // No primeiro acesso, habilita os campos para edição
+    if (nomeInput) {
+      nomeInput.disabled = false;
+      nomeInput.readOnly = false;
+      nomeInput.style.pointerEvents = 'auto';
+      nomeInput.style.opacity = '1';
+      nomeInput.style.cursor = 'text';
+      nomeInput.style.background = 'white';
+      nomeInput.style.borderColor = 'var(--border)';
+      nomeInput.style.color = 'var(--text-primary)';
+    }
+    if (turmaInput) {
+      turmaInput.disabled = false;
+      turmaInput.readOnly = false;
+      turmaInput.style.pointerEvents = 'auto';
+      turmaInput.style.opacity = '1';
+      turmaInput.style.cursor = 'text';
+      turmaInput.style.background = 'white';
+      turmaInput.style.borderColor = 'var(--border)';
+      turmaInput.style.color = 'var(--text-primary)';
+    }
+    
+    // No primeiro acesso, mostra o botão "Salvar Alterações"
+    const saveBtn = document.getElementById('aluno-perfil-save-btn');
+    if (saveBtn) {
+      saveBtn.style.display = 'flex';
     }
     
     modal.style.display = 'flex';

@@ -71,7 +71,7 @@
           <circle cx="2.5" cy="10.5" r=".5" fill="currentColor"/>
         </g>
       </svg>
-      <span>Ferramentas</span>
+      <span>Calcular Química</span>
     </button>
     <button class="nav-btn" data-target="quizgeral" style="display:inline-flex; align-items:center; gap:8px">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="flex-shrink:0">
@@ -746,7 +746,7 @@
       <!-- Ferramentas de apoio (cálculos) -->
       <article id="ferramentas" class="section">
         <div style="margin-bottom:32px; text-align:center; max-width:700px; margin-left:auto; margin-right:auto">
-          <h2 style="font-size:2rem; margin-bottom:12px; color:#1e40af">Ferramentas de Apoio</h2>
+          <h2 style="font-size:2rem; margin-bottom:12px; color:#1e40af">Calcular Química</h2>
           <p style="font-size:1.05rem; color:#64748b; line-height:1.6">Calculadoras práticas para seus estudos de Química Orgânica</p>
         </div>
 
@@ -939,13 +939,15 @@
                   <button type="button" onclick="closeMassaKeyboard()" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:1.5rem; padding:0; width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:4px" onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#ef4444'" onmouseout="this.style.background='none'; this.style.color='#64748b'">×</button>
                 </div>
                 
-                <!-- Elementos Químicos Comuns -->
+                <!-- Elementos Químicos - Tabela Periódica Completa -->
                 <div style="margin-bottom:12px">
-                  <label style="font-size:0.85rem; color:#64748b; font-weight:600; display:block; margin-bottom:8px">Elementos:</label>
-                  <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(50px, 1fr)); gap:6px">
+                  <label style="font-size:0.85rem; color:#64748b; font-weight:600; display:block; margin-bottom:8px">Elementos da Tabela Periódica:</label>
+                  <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(50px, 1fr)); gap:6px; max-height:400px; overflow-y:auto; padding:4px">
                     <button type="button" class="keyboard-btn" data-char="H">H</button>
                     <button type="button" class="keyboard-btn" data-char="He">He</button>
                     <button type="button" class="keyboard-btn" data-char="Li">Li</button>
+                    <button type="button" class="keyboard-btn" data-char="Be">Be</button>
+                    <button type="button" class="keyboard-btn" data-char="B">B</button>
                     <button type="button" class="keyboard-btn" data-char="C">C</button>
                     <button type="button" class="keyboard-btn" data-char="N">N</button>
                     <button type="button" class="keyboard-btn" data-char="O">O</button>
@@ -958,11 +960,107 @@
                     <button type="button" class="keyboard-btn" data-char="P">P</button>
                     <button type="button" class="keyboard-btn" data-char="S">S</button>
                     <button type="button" class="keyboard-btn" data-char="Cl">Cl</button>
+                    <button type="button" class="keyboard-btn" data-char="Ar">Ar</button>
                     <button type="button" class="keyboard-btn" data-char="K">K</button>
                     <button type="button" class="keyboard-btn" data-char="Ca">Ca</button>
+                    <button type="button" class="keyboard-btn" data-char="Sc">Sc</button>
+                    <button type="button" class="keyboard-btn" data-char="Ti">Ti</button>
+                    <button type="button" class="keyboard-btn" data-char="V">V</button>
+                    <button type="button" class="keyboard-btn" data-char="Cr">Cr</button>
+                    <button type="button" class="keyboard-btn" data-char="Mn">Mn</button>
                     <button type="button" class="keyboard-btn" data-char="Fe">Fe</button>
+                    <button type="button" class="keyboard-btn" data-char="Co">Co</button>
+                    <button type="button" class="keyboard-btn" data-char="Ni">Ni</button>
                     <button type="button" class="keyboard-btn" data-char="Cu">Cu</button>
                     <button type="button" class="keyboard-btn" data-char="Zn">Zn</button>
+                    <button type="button" class="keyboard-btn" data-char="Ga">Ga</button>
+                    <button type="button" class="keyboard-btn" data-char="Ge">Ge</button>
+                    <button type="button" class="keyboard-btn" data-char="As">As</button>
+                    <button type="button" class="keyboard-btn" data-char="Se">Se</button>
+                    <button type="button" class="keyboard-btn" data-char="Br">Br</button>
+                    <button type="button" class="keyboard-btn" data-char="Kr">Kr</button>
+                    <button type="button" class="keyboard-btn" data-char="Rb">Rb</button>
+                    <button type="button" class="keyboard-btn" data-char="Sr">Sr</button>
+                    <button type="button" class="keyboard-btn" data-char="Y">Y</button>
+                    <button type="button" class="keyboard-btn" data-char="Zr">Zr</button>
+                    <button type="button" class="keyboard-btn" data-char="Nb">Nb</button>
+                    <button type="button" class="keyboard-btn" data-char="Mo">Mo</button>
+                    <button type="button" class="keyboard-btn" data-char="Tc">Tc</button>
+                    <button type="button" class="keyboard-btn" data-char="Ru">Ru</button>
+                    <button type="button" class="keyboard-btn" data-char="Rh">Rh</button>
+                    <button type="button" class="keyboard-btn" data-char="Pd">Pd</button>
+                    <button type="button" class="keyboard-btn" data-char="Ag">Ag</button>
+                    <button type="button" class="keyboard-btn" data-char="Cd">Cd</button>
+                    <button type="button" class="keyboard-btn" data-char="In">In</button>
+                    <button type="button" class="keyboard-btn" data-char="Sn">Sn</button>
+                    <button type="button" class="keyboard-btn" data-char="Sb">Sb</button>
+                    <button type="button" class="keyboard-btn" data-char="Te">Te</button>
+                    <button type="button" class="keyboard-btn" data-char="I">I</button>
+                    <button type="button" class="keyboard-btn" data-char="Xe">Xe</button>
+                    <button type="button" class="keyboard-btn" data-char="Cs">Cs</button>
+                    <button type="button" class="keyboard-btn" data-char="Ba">Ba</button>
+                    <button type="button" class="keyboard-btn" data-char="La">La</button>
+                    <button type="button" class="keyboard-btn" data-char="Ce">Ce</button>
+                    <button type="button" class="keyboard-btn" data-char="Pr">Pr</button>
+                    <button type="button" class="keyboard-btn" data-char="Nd">Nd</button>
+                    <button type="button" class="keyboard-btn" data-char="Pm">Pm</button>
+                    <button type="button" class="keyboard-btn" data-char="Sm">Sm</button>
+                    <button type="button" class="keyboard-btn" data-char="Eu">Eu</button>
+                    <button type="button" class="keyboard-btn" data-char="Gd">Gd</button>
+                    <button type="button" class="keyboard-btn" data-char="Tb">Tb</button>
+                    <button type="button" class="keyboard-btn" data-char="Dy">Dy</button>
+                    <button type="button" class="keyboard-btn" data-char="Ho">Ho</button>
+                    <button type="button" class="keyboard-btn" data-char="Er">Er</button>
+                    <button type="button" class="keyboard-btn" data-char="Tm">Tm</button>
+                    <button type="button" class="keyboard-btn" data-char="Yb">Yb</button>
+                    <button type="button" class="keyboard-btn" data-char="Lu">Lu</button>
+                    <button type="button" class="keyboard-btn" data-char="Hf">Hf</button>
+                    <button type="button" class="keyboard-btn" data-char="Ta">Ta</button>
+                    <button type="button" class="keyboard-btn" data-char="W">W</button>
+                    <button type="button" class="keyboard-btn" data-char="Re">Re</button>
+                    <button type="button" class="keyboard-btn" data-char="Os">Os</button>
+                    <button type="button" class="keyboard-btn" data-char="Ir">Ir</button>
+                    <button type="button" class="keyboard-btn" data-char="Pt">Pt</button>
+                    <button type="button" class="keyboard-btn" data-char="Au">Au</button>
+                    <button type="button" class="keyboard-btn" data-char="Hg">Hg</button>
+                    <button type="button" class="keyboard-btn" data-char="Tl">Tl</button>
+                    <button type="button" class="keyboard-btn" data-char="Pb">Pb</button>
+                    <button type="button" class="keyboard-btn" data-char="Bi">Bi</button>
+                    <button type="button" class="keyboard-btn" data-char="Po">Po</button>
+                    <button type="button" class="keyboard-btn" data-char="At">At</button>
+                    <button type="button" class="keyboard-btn" data-char="Rn">Rn</button>
+                    <button type="button" class="keyboard-btn" data-char="Fr">Fr</button>
+                    <button type="button" class="keyboard-btn" data-char="Ra">Ra</button>
+                    <button type="button" class="keyboard-btn" data-char="Ac">Ac</button>
+                    <button type="button" class="keyboard-btn" data-char="Th">Th</button>
+                    <button type="button" class="keyboard-btn" data-char="Pa">Pa</button>
+                    <button type="button" class="keyboard-btn" data-char="U">U</button>
+                    <button type="button" class="keyboard-btn" data-char="Np">Np</button>
+                    <button type="button" class="keyboard-btn" data-char="Pu">Pu</button>
+                    <button type="button" class="keyboard-btn" data-char="Am">Am</button>
+                    <button type="button" class="keyboard-btn" data-char="Cm">Cm</button>
+                    <button type="button" class="keyboard-btn" data-char="Bk">Bk</button>
+                    <button type="button" class="keyboard-btn" data-char="Cf">Cf</button>
+                    <button type="button" class="keyboard-btn" data-char="Es">Es</button>
+                    <button type="button" class="keyboard-btn" data-char="Fm">Fm</button>
+                    <button type="button" class="keyboard-btn" data-char="Md">Md</button>
+                    <button type="button" class="keyboard-btn" data-char="No">No</button>
+                    <button type="button" class="keyboard-btn" data-char="Lr">Lr</button>
+                    <button type="button" class="keyboard-btn" data-char="Rf">Rf</button>
+                    <button type="button" class="keyboard-btn" data-char="Db">Db</button>
+                    <button type="button" class="keyboard-btn" data-char="Sg">Sg</button>
+                    <button type="button" class="keyboard-btn" data-char="Bh">Bh</button>
+                    <button type="button" class="keyboard-btn" data-char="Hs">Hs</button>
+                    <button type="button" class="keyboard-btn" data-char="Mt">Mt</button>
+                    <button type="button" class="keyboard-btn" data-char="Ds">Ds</button>
+                    <button type="button" class="keyboard-btn" data-char="Rg">Rg</button>
+                    <button type="button" class="keyboard-btn" data-char="Cn">Cn</button>
+                    <button type="button" class="keyboard-btn" data-char="Nh">Nh</button>
+                    <button type="button" class="keyboard-btn" data-char="Fl">Fl</button>
+                    <button type="button" class="keyboard-btn" data-char="Mc">Mc</button>
+                    <button type="button" class="keyboard-btn" data-char="Lv">Lv</button>
+                    <button type="button" class="keyboard-btn" data-char="Ts">Ts</button>
+                    <button type="button" class="keyboard-btn" data-char="Og">Og</button>
                   </div>
                 </div>
                 
@@ -3279,16 +3377,6 @@
     </div>
   </div>
 
-  <!-- Botão flutuante para abrir o chat da IA -->
-  <button id="ai-chat-toggle" class="btn primary" style="position:fixed; right:24px; bottom:24px; z-index:9998; border-radius:999px; padding:10px 18px; display:flex; align-items:center; gap:8px; font-size:0.9rem; white-space:nowrap; flex-shrink:0">
-    <span style="display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" style="width:18px; height:18px; fill:white;">
-        <path d="M14.217,19.707l-1.112,2.547c-0.427,0.979-1.782,0.979-2.21,0l-1.112-2.547c-0.99-2.267-2.771-4.071-4.993-5.057	L1.73,13.292c-0.973-0.432-0.973-1.848,0-2.28l2.965-1.316C6.974,8.684,8.787,6.813,9.76,4.47l1.126-2.714	c0.418-1.007,1.81-1.007,2.228,0L14.24,4.47c0.973,2.344,2.786,4.215,5.065,5.226l2.965,1.316c0.973,0.432,0.973,1.848,0,2.28	l-3.061,1.359C16.988,15.637,15.206,17.441,14.217,19.707z"></path>
-        <path d="M24.481,27.796l-0.339,0.777c-0.248,0.569-1.036,0.569-1.284,0l-0.339-0.777c-0.604-1.385-1.693-2.488-3.051-3.092	l-1.044-0.464c-0.565-0.251-0.565-1.072,0-1.323l0.986-0.438c1.393-0.619,2.501-1.763,3.095-3.195l0.348-0.84	c0.243-0.585,1.052-0.585,1.294,0l0.348,0.84c0.594,1.432,1.702,2.576,3.095,3.195l0.986,0.438c0.565,0.251,0.565,1.072,0,1.323	l-1.044,0.464C26.174,25.308,25.085,26.411,24.481,27.796z"></path>
-      </svg>
-    </span>
-    <span style="font-weight:600; flex-shrink:0">Ajuda</span>
-  </button>
 
   <footer>&copy; 2025 Blog Química Orgânica — Feito por Natanael e Gabi</footer>
   
@@ -3323,10 +3411,9 @@
             </svg>
             Nome Completo
           </label>
-          <input type="text" id="aluno-perfil-nome" placeholder="Digite seu nome completo" required
-                 style="width:100%; padding:14px 16px; border:2px solid var(--border); border-radius:10px; font-size:1rem; font-family:inherit; transition:all 0.3s; background:white; box-sizing:border-box"
-                 onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 4px rgba(37,99,235,0.1)'"
-                 onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'"/>
+          <input type="text" id="aluno-perfil-nome" placeholder="Digite seu nome completo" required disabled
+                 style="width:100%; padding:14px 16px; border:2px solid rgba(148,163,184,0.3); border-radius:10px; font-size:1rem; font-family:inherit; transition:all 0.3s; background:rgba(241,245,249,0.8); box-sizing:border-box; color:#64748b; cursor:not-allowed; opacity:0.7"
+                 readonly/>
         </div>
         
         <div>
@@ -3339,10 +3426,9 @@
             </svg>
             Turma
           </label>
-          <input type="text" id="aluno-perfil-turma" placeholder="Ex: 3º Informática A" required
-                 style="width:100%; padding:14px 16px; border:2px solid var(--border); border-radius:10px; font-size:1rem; font-family:inherit; transition:all 0.3s; background:white; box-sizing:border-box"
-                 onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 4px rgba(37,99,235,0.1)'"
-                 onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'"/>
+          <input type="text" id="aluno-perfil-turma" placeholder="Ex: 3º Informática A" required disabled
+                 style="width:100%; padding:14px 16px; border:2px solid rgba(148,163,184,0.3); border-radius:10px; font-size:1rem; font-family:inherit; transition:all 0.3s; background:rgba(241,245,249,0.8); box-sizing:border-box; color:#64748b; cursor:not-allowed; opacity:0.7"
+                 readonly/>
         </div>
         
         <div id="aluno-perfil-error" style="display:none; padding:12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; color:#dc2626; font-size:0.9rem"></div>
@@ -3351,7 +3437,7 @@
         
         <div class="perfil-actions" style="display:flex; flex-direction:column; gap:12px">
           <div style="display:flex; gap:12px; flex-wrap:wrap">
-            <button type="submit" class="btn primary" style="flex:1; padding:14px 0; font-size:1rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px">
+            <button type="submit" id="aluno-perfil-save-btn" class="btn primary" style="flex:1; padding:14px 0; font-size:1rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
                 <polyline points="17 21 17 13 7 13 7 21"/>

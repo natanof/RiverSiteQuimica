@@ -91,12 +91,25 @@
             <span style="flex:1"></span>
           </div>
           
-          <button type="submit" class="btn primary" style="width:100%; margin-bottom:20px; padding:16px; font-size:1rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px">
+          <button type="submit" class="btn primary" style="width:100%; margin-bottom:12px; padding:16px; font-size:1rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
             </svg>
             Entrar no Portal
           </button>
+          
+          <div style="text-align:center; margin-bottom:20px">
+            <a href="#" onclick="event.preventDefault(); showRecoverPasswordModal(); return false;" 
+               style="color:#2563eb; text-decoration:none; font-size:0.9rem; transition:all 0.3s; display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:8px; font-weight:500" 
+               onmouseover="this.style.background='rgba(37,99,235,0.05)'" 
+               onmouseout="this.style.background='transparent'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3h18v18H3zM9 9h6v6H9z"/>
+                <path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>
+              </svg>
+              Esqueci minha senha
+            </a>
+          </div>
           
           <div style="text-align:center; padding-top:20px; border-top:1px solid rgba(226,232,240,0.8)">
             <a href="index.html" style="color:var(--muted); text-decoration:none; font-size:0.9rem; transition:all 0.3s; display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:8px" 
@@ -162,6 +175,11 @@
           </svg>
           Voltar ao Site
         </button>
+        <button class="btn ghost" onclick="showProfessorProfileModal()" style="display:flex; align-items:center; gap:8px; flex:1; min-width:150px; justify-content:center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+            <path fill="currentColor" d="m9.25 22l-.4-3.2q-.325-.125-.612-.3t-.563-.375L4.7 19.375l-2.75-4.75l2.575-1.95Q4.5 12.5 4.5 12.338v-.675q0-.163.025-.338L1.95 9.375l2.75-4.75l2.975 1.25q.275-.2.575-.375t.6-.3l.4-3.2h5.5l.4 3.2q.325.125.613.3t.562.375l2.975-1.25l2.75 4.75l-2.575 1.95q.025.175.025.338v.674q0 .163-.05.338l2.575 1.95l-2.75 4.75l-2.95-1.25q-.275.2-.575.375t-.6.3l-.4 3.2zM11 20h1.975l.35-2.65q.775-.2 1.438-.587t1.212-.938l2.475 1.025l.975-1.7l-2.15-1.625q.125-.35.175-.737T17.5 12t-.05-.787t-.175-.738l2.15-1.625l-.975-1.7l-2.475 1.05q-.55-.575-1.212-.962t-1.438-.588L13 4h-1.975l-.35 2.65q-.775.2-1.437.588t-1.213.937L5.55 7.15l-.975 1.7l2.15 1.6q-.125.375-.175.75t-.05.8q0 .4.05.775t.175.75l-2.15 1.625l.975 1.7l2.475-1.05q.55.575 1.213.963t1.437.587zm1.05-4.5q1.45 0 2.475-1.025T15.55 12t-1.025-2.475T12.05 8.5q-1.475 0-2.488 1.025T8.55 12t1.013 2.475T12.05 15.5M12 12"/>
+          </svg>
+        </button>
         <button class="btn ghost" onclick="showChangePasswordModal()" style="display:flex; align-items:center; gap:8px; flex:1; min-width:150px; justify-content:center">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -206,7 +224,7 @@
                   <p style="margin:0; color:var(--muted); font-size:0.9rem">Escolha o tópico para adicionar ou gerenciar perguntas</p>
                 </div>
               </div>
-              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:20px">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:20px" id="prof-topics-grid">
                 <button class="btn ghost prof-topic-btn" onclick="selectProfessorTopic('alcanos')" id="prof-topic-alcanos" style="padding:16px; border:2px solid rgba(37,99,235,0.2); border-radius:12px; transition:all 0.3s; text-align:center; font-weight:600">
                   <div style="font-size:1.5rem; margin-bottom:8px">🔵</div>
                   <div>Alcanos</div>
@@ -222,6 +240,10 @@
                 <button class="btn ghost prof-topic-btn" onclick="selectProfessorTopic('oxigenados')" id="prof-topic-oxigenados" style="padding:16px; border:2px solid rgba(16,185,129,0.2); border-radius:12px; transition:all 0.3s; text-align:center; font-weight:600">
                   <div style="font-size:1.5rem; margin-bottom:8px">⚗️</div>
                   <div>Oxigenados</div>
+                </button>
+                <button class="btn primary prof-topic-btn" onclick="showAddTopicModal()" style="padding:16px; border:2px solid rgba(139,92,246,0.3); border-radius:12px; transition:all 0.3s; text-align:center; font-weight:600; background:linear-gradient(135deg, rgba(139,92,246,0.1), rgba(99,102,241,0.1)); color:#6b21a8">
+                  <div style="font-size:1.5rem; margin-bottom:8px">➕</div>
+                  <div>Adicionar Tema</div>
                 </button>
               </div>
             </div>
@@ -582,6 +604,135 @@
       <div style="position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, rgba(37,99,235,0.2), rgba(6,182,212,0.2), transparent)"></div>
       &copy; 2025 Portal do Professor — Química Orgânica
     </footer>
+  </div>
+  
+  <!-- Modal de Perfil do Professor -->
+  <div id="professor-profile-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; padding:20px">
+    <div class="card" style="max-width:600px; width:100%; position:relative">
+      <button onclick="closeProfessorProfileModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:24px; color:var(--muted); cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:50%; transition:all 0.3s" 
+              onmouseover="this.style.background='rgba(0,0,0,0.05)'; this.style.color='#ef4444'" 
+              onmouseout="this.style.background='none'; this.style.color='var(--muted)'">×</button>
+      
+      <h3 style="margin:0 0 8px 0; font-size:1.5rem">Perfil do Professor</h3>
+      <p style="color:var(--muted); margin-bottom:24px; font-size:0.95rem">Configure suas informações de perfil</p>
+      
+      <form id="professor-profile-form">
+        <div style="margin-bottom:20px">
+          <label style="display:block; margin-bottom:8px; font-weight:600; color:#1e40af">Nome Completo:</label>
+          <input type="text" id="prof-profile-nome" placeholder="Digite seu nome completo" required
+                 style="width:100%; padding:14px; border:2px solid rgba(37,99,235,0.2); border-radius:12px; font-size:1rem; font-family:inherit; transition:all 0.3s; box-sizing:border-box"
+                 onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)'"
+                 onblur="this.style.borderColor='rgba(37,99,235,0.2)'; this.style.boxShadow='none'"/>
+        </div>
+        
+        <div style="margin-bottom:20px">
+          <label style="display:block; margin-bottom:8px; font-weight:600; color:#1e40af">Foto para Avatar:</label>
+          <div style="display:flex; align-items:center; gap:16px">
+            <div id="prof-profile-avatar-preview" style="width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg, #8b5cf6, #6366f1); display:flex; align-items:center; justify-content:center; overflow:hidden; border:3px solid rgba(139,92,246,0.3); flex-shrink:0">
+              <img id="prof-profile-avatar-img" src="" alt="Avatar" style="width:100%; height:100%; object-fit:cover; display:none">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div style="flex:1">
+              <input type="file" id="prof-profile-avatar-input" accept="image/*" 
+                     style="width:100%; padding:10px; border:2px solid rgba(37,99,235,0.2); border-radius:10px; font-size:0.95rem; font-family:inherit; transition:all 0.3s; background:#ffffff; box-sizing:border-box; cursor:pointer"
+                     onchange="previewProfessorAvatar(event)"
+                     onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)'"
+                     onblur="this.style.borderColor='rgba(37,99,235,0.2)'; this.style.boxShadow='none'"/>
+              <p style="margin:6px 0 0 0; color:var(--muted); font-size:0.85rem">Selecione uma imagem para seu avatar</p>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-bottom:24px">
+          <label style="display:block; margin-bottom:8px; font-weight:600; color:#1e40af">Vincular ao Email (para recuperar senha):</label>
+          <input type="email" id="prof-profile-email" placeholder="Digite seu email" required
+                 style="width:100%; padding:14px; border:2px solid rgba(37,99,235,0.2); border-radius:12px; font-size:1rem; font-family:inherit; transition:all 0.3s; box-sizing:border-box"
+                 onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)'"
+                 onblur="this.style.borderColor='rgba(37,99,235,0.2)'; this.style.boxShadow='none'"/>
+          <p style="margin:6px 0 0 0; color:var(--muted); font-size:0.85rem">Este email será usado para recuperação de senha</p>
+        </div>
+        
+        <div id="prof-profile-error" style="display:none; padding:12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; margin-bottom:16px; color:#dc2626; font-size:0.9rem"></div>
+        <div id="prof-profile-success" style="display:none; padding:12px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px; margin-bottom:16px; color:#059669; font-size:0.9rem"></div>
+        
+        <div style="display:flex; gap:12px">
+          <button type="button" class="btn primary" onclick="handleProfessorProfileSave(event)" style="flex:1">Salvar</button>
+          <button type="button" class="btn ghost" onclick="closeProfessorProfileModal()" style="flex:1">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Modal de Adicionar Tema -->
+  <div id="add-topic-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; padding:20px">
+    <div class="card" style="max-width:500px; width:100%; position:relative">
+      <button onclick="closeAddTopicModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:24px; color:var(--muted); cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:50%; transition:all 0.3s" 
+              onmouseover="this.style.background='rgba(0,0,0,0.05)'; this.style.color='#ef4444'" 
+              onmouseout="this.style.background='none'; this.style.color='var(--muted)'">×</button>
+      
+      <h3 style="margin:0 0 8px 0; font-size:1.5rem">Adicionar Novo Tema</h3>
+      <p style="color:var(--muted); margin-bottom:24px; font-size:0.95rem">Crie um novo tema para adicionar perguntas personalizadas</p>
+      
+      <form id="add-topic-form">
+        <div style="margin-bottom:20px">
+          <label style="display:block; margin-bottom:8px; font-weight:600; color:#1e40af">Nome do Tema:</label>
+          <input type="text" id="new-topic-name" placeholder="Ex: Ácidos, Bases, Ésteres..." required
+                 style="width:100%; padding:14px; border:2px solid rgba(37,99,235,0.2); border-radius:12px; font-size:1rem; font-family:inherit; transition:all 0.3s; box-sizing:border-box"
+                 onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)'"
+                 onblur="this.style.borderColor='rgba(37,99,235,0.2)'; this.style.boxShadow='none'"/>
+        </div>
+        
+        <div style="margin-bottom:20px">
+          <label style="display:block; margin-bottom:8px; font-weight:600; color:#1e40af">Ícone (emoji):</label>
+          <input type="text" id="new-topic-icon" placeholder="Ex: 🧪, ⚛️, 🔬..." maxlength="2"
+                 style="width:100%; padding:14px; border:2px solid rgba(37,99,235,0.2); border-radius:12px; font-size:1.5rem; font-family:inherit; transition:all 0.3s; box-sizing:border-box; text-align:center"
+                 onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)'"
+                 onblur="this.style.borderColor='rgba(37,99,235,0.2)'; this.style.boxShadow='none'"/>
+        </div>
+        
+        <div id="add-topic-error" style="display:none; padding:12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; margin-bottom:16px; color:#dc2626; font-size:0.9rem"></div>
+        <div id="add-topic-success" style="display:none; padding:12px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px; margin-bottom:16px; color:#059669; font-size:0.9rem"></div>
+        
+        <div style="display:flex; gap:12px">
+          <button type="button" class="btn primary" onclick="handleAddTopic(event)" style="flex:1">Criar Tema</button>
+          <button type="button" class="btn ghost" onclick="closeAddTopicModal()" style="flex:1">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Modal de Recuperação de Senha -->
+  <div id="recover-password-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; padding:20px">
+    <div class="card" style="max-width:500px; width:100%; position:relative">
+      <button onclick="closeRecoverPasswordModal()" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:24px; color:var(--muted); cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:50%; transition:all 0.3s" 
+              onmouseover="this.style.background='rgba(0,0,0,0.05)'; this.style.color='#ef4444'" 
+              onmouseout="this.style.background='none'; this.style.color='var(--muted)'">×</button>
+      
+      <h3 style="margin:0 0 8px 0; font-size:1.5rem">Recuperar Senha</h3>
+      <p style="color:var(--muted); margin-bottom:24px; font-size:0.95rem">Digite seu email vinculado para recuperar sua senha</p>
+      
+      <form id="recover-password-form">
+        <div style="margin-bottom:20px">
+          <label style="display:block; margin-bottom:8px; font-weight:600; color:#1e40af">Email:</label>
+          <input type="email" id="recover-email" placeholder="Digite o email vinculado ao seu perfil" required
+                 style="width:100%; padding:14px; border:2px solid rgba(37,99,235,0.2); border-radius:12px; font-size:1rem; font-family:inherit; transition:all 0.3s; box-sizing:border-box"
+                 onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)'"
+                 onblur="this.style.borderColor='rgba(37,99,235,0.2)'; this.style.boxShadow='none'"/>
+          <p style="margin:6px 0 0 0; color:var(--muted); font-size:0.85rem">O email deve ser o mesmo cadastrado no seu perfil</p>
+        </div>
+        
+        <div id="recover-error" style="display:none; padding:12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; margin-bottom:16px; color:#dc2626; font-size:0.9rem"></div>
+        <div id="recover-success" style="display:none; padding:12px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px; margin-bottom:16px; color:#059669; font-size:0.9rem"></div>
+        
+        <div style="display:flex; gap:12px">
+          <button type="button" class="btn primary" onclick="handleRecoverPassword(event)" style="flex:1">Recuperar Senha</button>
+          <button type="button" class="btn ghost" onclick="closeRecoverPasswordModal()" style="flex:1">Cancelar</button>
+        </div>
+      </form>
+    </div>
   </div>
   
   <!-- Modal de Alterar Senha -->
